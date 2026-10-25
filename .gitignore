@@ -1,0 +1,4 @@
+# Chave de assinatura do APK: é particular de quem gera o app, nunca vai para o repositório.
+*.p12
+*.jks
+*.keystore

@@ -1,0 +1,24 @@
+CAIXA DO MÊS - programa para Windows
+
+COMO ABRIR
+1. Extraia esta pasta inteira (botão direito no .zip > "Extrair tudo").
+2. Abra a pasta CaixaDoMes e dê dois cliques em CaixaDoMes.exe.
+3. Na primeira vez, o Windows pode mostrar "O Windows protegeu o computador".
+   Clique em "Mais informações" e depois em "Executar assim mesmo".
+   Isso aparece porque o programa não tem assinatura digital paga.
+
+ATALHO NA ÁREA DE TRABALHO
+Botão direito em CaixaDoMes.exe > "Mostrar mais opções" > "Enviar para" >
+"Área de trabalho (criar atalho)". Ou arraste o programa aberto para a barra de tarefas
+e escolha "Fixar na barra de tarefas".
+
+PASSAR OS DADOS DO CELULAR PARA O COMPUTADOR
+1. No celular, abra o Caixa do Mês > "Backup dos dados" > "Gerar e copiar".
+2. Mande esse texto para o computador (WhatsApp Web, e-mail, etc.).
+3. No computador, abra "Backup dos dados", cole o texto e clique em "Restaurar"
+   duas vezes (a segunda confirma). Se salvou o texto num arquivo .txt, use "Abrir arquivo".
+
+ONDE FICAM OS DADOS
+Neste computador, na pasta de dados do Windows (AppData). Você pode mover a pasta
+do programa ou trocar por uma versão nova sem perder nada.
+Use "Salvar em arquivo" no Backup de vez em quando para ter uma cópia.

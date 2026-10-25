@@ -1,0 +1,1607 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<!-- app:start -->
+<title>Caixa do Mês</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: livro-caixa doméstico — faixa de resumo no topo, coluna de entrada à esquerda, razão de contas à direita. */
+:root {
+  --bg: #EDF1EE;
+  --surface: #FFFFFF;
+  --surface-2: #F5F8F6;
+  --ink: #15201B;
+  --muted: #5A6A62;
+  --line: #D5DED9;
+  --accent: #0E6B52;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #DCEEE6;
+  --alta: #BF3A29;
+  --alta-soft: #FAE3DE;
+  --media: #A86A12;
+  --media-soft: #F7EAD3;
+  --baixa: #3C659C;
+  --baixa-soft: #DFE8F4;
+  --pos: #0E6B52;
+  --neg: #BF3A29;
+  --shadow: 0 1px 2px rgb(21 32 27 / .06), 0 4px 16px rgb(21 32 27 / .05);
+
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1412; --surface: #161E1B; --surface-2: #1B2521; --ink: #E3EAE6; --muted: #93A39B; --line: #29352F;
+    --accent: #45C29A; --accent-ink: #062A1F; --accent-soft: #173A2F;
+    --alta: #F08270; --alta-soft: #3A201B; --media: #E3AE5C; --media-soft: #342916; --baixa: #88AFE6; --baixa-soft: #1C2A3D;
+    --pos: #45C29A; --neg: #F08270; --shadow: 0 1px 2px rgb(0 0 0 / .3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1412; --surface: #161E1B; --surface-2: #1B2521; --ink: #E3EAE6; --muted: #93A39B; --line: #29352F;
+  --accent: #45C29A; --accent-ink: #062A1F; --accent-soft: #173A2F;
+  --alta: #F08270; --alta-soft: #3A201B; --media: #E3AE5C; --media-soft: #342916; --baixa: #88AFE6; --baixa-soft: #1C2A3D;
+  --pos: #45C29A; --neg: #F08270; --shadow: 0 1px 2px rgb(0 0 0 / .3);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 20px;
+}
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- topo ---------- */
+.topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.marca { display: flex; align-items: baseline; gap: 10px; }
+.marca h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.01em; }
+.marca .selo { font-family: var(--f-num); font-size: .75rem; color: var(--accent); border: 1px solid currentColor; border-radius: 4px; padding: 0 5px; }
+.mes-nav { display: flex; align-items: center; gap: 6px; }
+.mes-nav h2 { font-size: 1.15rem; font-weight: 500; min-width: 11.5ch; text-align: center; }
+.icone { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; font-size: 1.1rem; line-height: 1; }
+.icone:hover { border-color: var(--accent); color: var(--accent); }
+.status { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); }
+.status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.status[data-s="ok"]::before { background: var(--pos); }
+.status[data-s="salvando"]::before { background: var(--media); }
+.status[data-s="erro"]::before { background: var(--neg); }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primario { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primario:hover { filter: brightness(1.08); }
+.btn.texto { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 6px; }
+.btn.texto:hover { text-decoration: underline; }
+
+/* ---------- avisos ---------- */
+.aviso { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 16px; border-radius: var(--r); background: var(--accent-soft); }
+.aviso p { margin: 0; flex: 1 1 280px; }
+.aviso .acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- resumo ---------- */
+.resumo { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 20px; display: grid; gap: 18px; }
+.cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.cifra { display: grid; gap: 2px; min-width: 0; }
+.cifra .rot { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.cifra .val { font-family: var(--f-num); font-variant-numeric: tabular-nums; font-size: clamp(1.15rem, 2.6vw, 1.6rem); font-weight: 500; overflow-wrap: anywhere; }
+.cifra.sobra .val { font-family: var(--f-display); font-weight: 700; font-size: clamp(1.6rem, 4.4vw, 2.6rem); line-height: 1.1; color: var(--pos); }
+.cifra.sobra.negativo .val { color: var(--neg); }
+.cifra .sub { font-size: .8rem; color: var(--muted); }
+
+.barra { position: relative; height: 18px; border-radius: 6px; background: var(--surface-2); display: flex; overflow: hidden; border: 1px solid var(--line); }
+.barra span { height: 100%; transition: width .3s ease; }
+.barra .s-alta { background: var(--alta); }
+.barra .s-media { background: var(--media); }
+.barra .s-baixa { background: var(--baixa); }
+.barra .s-sobra { background: repeating-linear-gradient(135deg, var(--accent-soft) 0 6px, transparent 6px 10px); }
+.barra .limite { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--ink); }
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .82rem; color: var(--muted); margin: 0; padding: 0; list-style: none; }
+.legenda li { display: flex; align-items: center; gap: 6px; }
+.legenda i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.legenda b { color: var(--ink); font-weight: 500; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.situacao { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: .85rem; color: var(--muted); }
+.situacao b { color: var(--ink); font-weight: 500; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- grade principal ---------- */
+.grade { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.coluna { display: grid; gap: 20px; min-width: 0; }
+.painel { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.painel > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.painel h3 { font-size: 1.1rem; font-weight: 700; }
+.painel .nota { font-size: .8rem; color: var(--muted); margin: 0; }
+
+.campo { display: grid; gap: 4px; min-width: 0; }
+.campo > label, .campo > legend { font-size: .78rem; font-weight: 600; color: var(--muted); }
+.campo input, .campo select {
+  width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2);
+  padding: 8px 10px; min-height: 40px;
+}
+.campo input:focus, .campo select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.dinheiro { position: relative; }
+.dinheiro::before { content: "R$"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .85rem; pointer-events: none; }
+.dinheiro input { padding-left: 34px; font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.linha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+
+.renda { display: grid; gap: 8px; padding: 12px; border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line); }
+.renda .tag { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.renda .campo input { background: var(--surface); }
+
+fieldset.campo { border: 0; padding: 0; margin: 0; }
+.prio-escolha { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.prio-escolha label { position: relative; cursor: pointer; }
+.prio-escolha input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.prio-escolha span { display: grid; gap: 0; text-align: center; padding: 7px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); font-weight: 600; font-size: .88rem; line-height: 1.25; }
+.prio-escolha small { font-weight: 400; font-size: .7rem; color: var(--muted); }
+.prio-escolha input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.prio-escolha input[value="alta"]:checked + span { background: var(--alta-soft); border-color: var(--alta); color: var(--alta); }
+.prio-escolha input[value="media"]:checked + span { background: var(--media-soft); border-color: var(--media); color: var(--media); }
+.prio-escolha input[value="baixa"]:checked + span { background: var(--baixa-soft); border-color: var(--baixa); color: var(--baixa); }
+.prio-escolha input[name="f-rep"]:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.opcao { display: flex; gap: 8px; align-items: center; font-size: .88rem; cursor: pointer; }
+.opcao input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+.campo .nota { font-size: .78rem; color: var(--muted); margin: 0; }
+
+/* ---------- faixa de meses ---------- */
+.meses { position: relative; display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.meses button {
+  flex: 0 0 auto; min-width: 104px; display: grid; gap: 1px; text-align: left; padding: 8px 12px;
+  border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; scroll-snap-align: center;
+}
+.meses button:hover { border-color: var(--accent); }
+.meses button[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.meses .m { font-weight: 600; display: flex; align-items: baseline; gap: 5px; }
+.meses .m small { font-weight: 400; color: var(--muted); font-size: .75rem; }
+.meses .m i { font-style: normal; font-size: .62rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 600; }
+.meses .t { font-family: var(--f-num); font-variant-numeric: tabular-nums; font-size: .76rem; color: var(--muted); }
+.meses .s { font-family: var(--f-num); font-variant-numeric: tabular-nums; font-size: .8rem; font-weight: 500; }
+.meses .s.pos { color: var(--pos); }
+.meses .s.neg { color: var(--neg); }
+.meses .vazio-mes { font-size: .76rem; color: var(--muted); }
+.meses .g { font-family: var(--f-num); font-variant-numeric: tabular-nums; font-size: .72rem; color: var(--accent); }
+
+/* ---------- guardar dinheiro ---------- */
+.barra .s-guardar { background: var(--accent); }
+.atalhos { display: flex; flex-wrap: wrap; gap: 6px; }
+.atalhos button { border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 4px 11px; font-size: .8rem; cursor: pointer; }
+.atalhos button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.atalhos button:disabled { opacity: .5; cursor: default; }
+.conta-guardar { display: grid; gap: 4px; padding: 10px 12px; border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line); font-size: .88rem; }
+.conta-guardar div { display: flex; justify-content: space-between; gap: 12px; }
+.conta-guardar b { font-family: var(--f-num); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.conta-guardar .livre { border-top: 1px solid var(--line); padding-top: 6px; font-weight: 600; }
+.conta-guardar .livre.neg b { color: var(--neg); }
+.guardado { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r); background: var(--accent-soft); }
+.guardado .rot { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 600; }
+.guardado .val { font-family: var(--f-display); font-weight: 700; font-size: 1.35rem; color: var(--pos); }
+.guardado .sub { font-size: .78rem; color: var(--muted); }
+.chip.serie { border: 1px solid var(--line); color: var(--muted); font-weight: 500; }
+.pergunta { font-size: .8rem; color: var(--neg); font-weight: 600; padding-right: 4px; }
+.backup { display: block; }
+.backup > * + * { margin-top: 12px; }
+.backup summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: baseline; }
+.backup summary::-webkit-details-marker { display: none; }
+.backup summary::after { content: "+"; font-size: 1.2rem; color: var(--muted); }
+.backup[open] summary::after { content: "−"; }
+.backup textarea, #sync textarea { width: 100%; min-height: 96px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); padding: 8px; font: .78rem/1.4 var(--f-num); resize: vertical; }
+.form-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.form-acoes .btn.primario { flex: 1; }
+.erro-form { color: var(--neg); font-size: .82rem; margin: 0; }
+
+/* ---------- lista de gastos ---------- */
+.filtro { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.filtro button { border: 0; background: transparent; padding: 5px 10px; cursor: pointer; font-size: .82rem; }
+.filtro button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.grupo { display: grid; gap: 6px; }
+.grupo > header { display: flex; align-items: center; gap: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.grupo > header .dica { color: var(--muted); font-size: .82rem; flex: 1; }
+.grupo > header .num { font-size: .9rem; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; letter-spacing: .02em; white-space: nowrap; }
+.chip.alta { background: var(--alta-soft); color: var(--alta); }
+.chip.media { background: var(--media-soft); color: var(--media); }
+.chip.baixa { background: var(--baixa-soft); color: var(--baixa); }
+.chip.atrasada { background: var(--neg); color: var(--surface); }
+.chip.hoje { border: 1px solid var(--media); color: var(--media); }
+.chip.paga { background: var(--accent-soft); color: var(--pos); }
+
+ul.gastos { list-style: none; margin: 0; padding: 0; display: grid; }
+.gasto { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 4px 12px; padding: 9px 4px; border-bottom: 1px dashed var(--line); }
+.gasto:last-child { border-bottom: 0; }
+.gasto .check { display: grid; place-items: center; width: 28px; height: 28px; cursor: pointer; }
+.gasto .check input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+.gasto .info { display: grid; min-width: 0; }
+.gasto .nome { font-weight: 500; overflow-wrap: anywhere; }
+.gasto .meta { font-size: .78rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.gasto .valor { font-family: var(--f-num); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.gasto.pago .nome, .gasto.pago .valor { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+.gasto .ctrl { display: flex; align-items: center; gap: 2px; }
+.gasto select { border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); padding: 3px 4px; font-size: .78rem; }
+.mini { border: 0; background: transparent; cursor: pointer; padding: 4px 6px; border-radius: 6px; color: var(--muted); font-size: .8rem; }
+.mini:hover { background: var(--surface-2); color: var(--ink); }
+.mini.perigo:hover { color: var(--neg); }
+.vazio { text-align: center; color: var(--muted); padding: 22px 8px; border: 1px dashed var(--line); border-radius: var(--r); margin: 0; }
+
+/* ---------- ordem de pagamento ---------- */
+.diagnostico { margin: 0; padding: 10px 14px; border-radius: var(--r); font-size: .9rem; }
+.diagnostico.ok { background: var(--accent-soft); }
+.diagnostico.falta { background: var(--alta-soft); }
+.tabela-wrap { overflow-x: auto; }
+table.ordem { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.ordem th { text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.ordem td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.ordem td.n, .ordem th.n { text-align: right; font-family: var(--f-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ordem td.pos { color: var(--muted); width: 2.5em; }
+.ordem tr.nao-cabe td { color: var(--muted); }
+.ordem tr.nao-cabe td.saldo { color: var(--neg); }
+.ordem tr.corte td { padding: 4px 8px; border-bottom: 2px solid var(--neg); color: var(--neg); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
+
+/* ---------- toast ---------- */
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--surface); padding: 10px 14px; border-radius: 10px; display: flex; gap: 12px; align-items: center; box-shadow: var(--shadow); max-width: calc(100% - 32px); z-index: 20; font-size: .9rem; }
+.toast button { background: transparent; border: 0; color: var(--accent-soft); font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+@media (max-width: 820px) {
+  .grade { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .cifras { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .cifra.sobra { grid-column: 1 / -1; order: -1; }
+  .mes-nav h2 { min-width: 0; font-size: 1rem; }
+  .gasto { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .gasto .ctrl { grid-column: 2 / -1; justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .barra span { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header class="topo">
+    <div class="marca">
+      <h1>Caixa do Mês</h1>
+      <span class="selo">R$</span>
+    </div>
+    <nav class="mes-nav" aria-label="Mês">
+      <button class="icone" id="mes-ant" type="button" aria-label="Mês anterior">‹</button>
+      <h2 id="mes-rotulo" aria-live="polite">…</h2>
+      <button class="icone" id="mes-prox" type="button" aria-label="Próximo mês">›</button>
+      <button class="btn texto" id="mes-hoje" type="button" hidden>Mês atual</button>
+    </nav>
+    <div class="status" id="status" data-s="">Carregando…</div>
+  </header>
+
+  <nav class="meses" id="meses" aria-label="Escolher mês"></nav>
+
+  <div class="aviso" id="aviso-exemplo" hidden>
+    <p><strong>Estes são valores de exemplo.</strong> Edite à vontade para usar como base, ou comece com o mês em branco.</p>
+    <div class="acoes"><button class="btn" id="limpar-exemplo" type="button">Começar do zero</button></div>
+  </div>
+  <div class="aviso" id="aviso-copiar" hidden>
+    <p id="aviso-copiar-txt"></p>
+    <div class="acoes"><button class="btn primario" id="copiar-mes" type="button">Copiar contas</button></div>
+  </div>
+
+  <section class="resumo" aria-label="Resumo do mês">
+    <div class="cifras">
+      <div class="cifra">
+        <span class="rot">Renda do mês</span>
+        <span class="val" id="r-renda">R$ 0,00</span>
+        <span class="sub" id="r-renda-sub"></span>
+      </div>
+      <div class="cifra">
+        <span class="rot">Total de gastos</span>
+        <span class="val" id="r-gastos">R$ 0,00</span>
+        <span class="sub" id="r-gastos-sub"></span>
+      </div>
+      <div class="cifra sobra" id="r-sobra-box">
+        <span class="rot" id="r-sobra-rot">Vai sobrar</span>
+        <span class="val" id="r-sobra">R$ 0,00</span>
+        <span class="sub" id="r-sobra-sub"></span>
+      </div>
+    </div>
+    <div class="barra" id="barra" role="img" aria-label=""></div>
+    <ul class="legenda" id="legenda"></ul>
+    <div class="situacao" id="situacao"></div>
+  </section>
+
+  <div class="grade">
+    <div class="coluna">
+      <section class="painel" aria-labelledby="t-rendas">
+        <header><h3 id="t-rendas">Rendas</h3><p class="nota">Até 2 fontes</p></header>
+        <div class="renda">
+          <span class="tag">Fonte 1</span>
+          <div class="linha">
+            <div class="campo"><label for="renda0-nome">Nome</label><input id="renda0-nome" type="text" placeholder="Salário" maxlength="40" autocomplete="off"></div>
+            <div class="campo"><label for="renda0-valor">Valor</label><div class="dinheiro"><input id="renda0-valor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
+          </div>
+        </div>
+        <div class="renda">
+          <span class="tag">Fonte 2</span>
+          <div class="linha">
+            <div class="campo"><label for="renda1-nome">Nome</label><input id="renda1-nome" type="text" placeholder="Renda extra" maxlength="40" autocomplete="off"></div>
+            <div class="campo"><label for="renda1-valor">Valor</label><div class="dinheiro"><input id="renda1-valor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="painel" aria-labelledby="t-guardar">
+        <header><h3 id="t-guardar">Guardar dinheiro</h3><p class="nota" id="g-nota"></p></header>
+        <div class="campo">
+          <label for="g-valor">Quanto vou guardar este mês</label>
+          <div class="dinheiro"><input id="g-valor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+        </div>
+        <div class="atalhos" role="group" aria-label="Valores rápidos">
+          <button type="button" data-valor="5000">R$ 50</button>
+          <button type="button" data-valor="10000">R$ 100</button>
+          <button type="button" data-valor="20000">R$ 200</button>
+          <button type="button" data-valor="50000">R$ 500</button>
+          <button type="button" id="g-tudo">Tudo que sobra</button>
+        </div>
+        <div class="conta-guardar" aria-live="polite">
+          <div><span>Sobra do mês</span><b id="g-sobra">R$ 0,00</b></div>
+          <div><span>Vou guardar</span><b id="g-guardar">R$ 0,00</b></div>
+          <div class="livre" id="g-livre-linha"><span>Livre para gastar</span><b id="g-livre">R$ 0,00</b></div>
+        </div>
+        <p class="erro-form" id="g-aviso" hidden></p>
+        <label class="opcao"><input type="checkbox" id="g-feito">Já guardei este valor</label>
+        <button class="btn texto" id="g-repetir" type="button" style="justify-self:start; padding-inline:0; text-align:left">Guardar este valor nos próximos 11 meses</button>
+        <div class="guardado">
+          <span class="rot">Total já guardado</span>
+          <span class="val" id="g-total">R$ 0,00</span>
+          <span class="sub" id="g-total-sub"></span>
+        </div>
+      </section>
+
+      <section class="painel" aria-labelledby="t-form">
+        <header><h3 id="t-form">Novo gasto</h3></header>
+        <form id="form-gasto" novalidate>
+          <div style="display:grid; gap:12px">
+            <div class="campo"><label for="f-desc">Descrição</label><input id="f-desc" type="text" placeholder="Ex.: Conta de luz" maxlength="60" autocomplete="off" required></div>
+            <div class="linha">
+              <div class="campo"><label for="f-valor" id="f-valor-rot">Valor</label><div class="dinheiro"><input id="f-valor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off" required></div></div>
+              <div class="campo"><label for="f-dia">Vence dia</label><input id="f-dia" type="number" min="1" max="31" inputmode="numeric" placeholder="—"></div>
+            </div>
+            <div class="campo"><label for="f-cat">Categoria</label><select id="f-cat"></select></div>
+            <fieldset class="campo">
+              <legend>Prioridade</legend>
+              <div class="prio-escolha">
+                <label><input type="radio" name="f-prio" id="f-prio-alta" value="alta"><span>Alta<small>não pode atrasar</small></span></label>
+                <label><input type="radio" name="f-prio" id="f-prio-media" value="media" checked><span>Média<small>importante</small></span></label>
+                <label><input type="radio" name="f-prio" id="f-prio-baixa" value="baixa"><span>Baixa<small>pode esperar</small></span></label>
+              </div>
+            </fieldset>
+            <fieldset class="campo" id="f-rep-box">
+              <legend>Repetição</legend>
+              <div class="prio-escolha">
+                <label><input type="radio" name="f-rep" id="f-rep-unica" value="unica" checked><span>Só este mês</span></label>
+                <label><input type="radio" name="f-rep" id="f-rep-parcelada" value="parcelada"><span>Parcelada</span></label>
+                <label><input type="radio" name="f-rep" id="f-rep-fixa" value="fixa"><span>Todo mês</span></label>
+              </div>
+            </fieldset>
+            <div class="campo" id="f-n-box" hidden>
+              <label for="f-n" id="f-n-rot">Número de parcelas</label>
+              <input id="f-n" type="number" min="2" max="60" value="2" inputmode="numeric">
+              <p class="nota" id="f-n-nota"></p>
+            </div>
+            <label class="opcao" id="f-prox-box" hidden><input type="checkbox" id="f-prox" checked>Aplicar também aos próximos meses</label>
+            <p class="erro-form" id="f-erro" role="alert" hidden></p>
+            <div class="form-acoes">
+              <button class="btn primario" id="f-salvar" type="submit">Adicionar gasto</button>
+              <button class="btn" id="f-cancelar" type="button" hidden>Cancelar</button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="coluna">
+      <section class="painel" aria-labelledby="t-gastos">
+        <header>
+          <h3 id="t-gastos">Gastos do mês</h3>
+          <div class="filtro" role="group" aria-label="Mostrar">
+            <button type="button" data-filtro="todas" aria-pressed="true">Todas</button>
+            <button type="button" data-filtro="apagar" aria-pressed="false">A pagar</button>
+            <button type="button" data-filtro="pagas" aria-pressed="false">Pagas</button>
+          </div>
+        </header>
+        <div id="lista" style="display:grid; gap:18px"></div>
+      </section>
+
+      <section class="painel" aria-labelledby="t-ordem">
+        <header><h3 id="t-ordem">Ordem de pagamento</h3><p class="nota">Pela prioridade e depois pelo vencimento</p></header>
+        <p class="diagnostico" id="diagnostico"></p>
+        <div class="tabela-wrap">
+          <table class="ordem">
+            <thead><tr><th class="n">#</th><th>Conta</th><th>Prioridade</th><th class="n">Valor</th><th class="n">Saldo depois</th></tr></thead>
+            <tbody id="ordem"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <details class="painel backup" id="sync" hidden>
+        <summary><h3>Sincronizar celular e computador</h3></summary>
+        <div id="sync-config" style="display:grid; gap:12px" hidden>
+          <p class="nota">Para ligar, crie um projeto grátis no Firebase e cole aqui o código <strong>firebaseConfig</strong> que ele mostra em Configurações do projeto &gt; Seus apps. Faça isso no celular e no computador.</p>
+          <label class="sr" for="sync-config-texto">Código firebaseConfig</label>
+          <textarea id="sync-config-texto" spellcheck="false" autocomplete="off" placeholder="const firebaseConfig = { apiKey: &quot;AIza…&quot;, databaseURL: &quot;https://…&quot;, … };"></textarea>
+          <div class="form-acoes"><button class="btn primario" id="sync-config-salvar" type="button">Ligar sincronização</button></div>
+        </div>
+        <div id="sync-fora" style="display:grid; gap:12px">
+          <p class="nota">Crie a conta no aparelho que tem os dados mais atualizados. No outro, use Entrar com o mesmo e-mail e senha: ele recebe os dados da conta. Depois disso, o que você muda num aparece no outro.</p>
+          <div class="campo"><label for="sync-email">E-mail</label><input id="sync-email" type="email" autocomplete="email" inputmode="email"></div>
+          <div class="campo"><label for="sync-senha">Senha</label><input id="sync-senha" type="password" autocomplete="current-password"></div>
+          <div class="form-acoes">
+            <button class="btn primario" id="sync-entrar" type="button">Entrar</button>
+            <button class="btn" id="sync-criar" type="button">Criar conta</button>
+          </div>
+          <button class="btn texto" id="sync-esqueci" type="button" style="justify-self:start; padding-inline:0">Esqueci a senha</button>
+          <button class="btn texto" id="sync-config-trocar" type="button" style="justify-self:start; padding-inline:0">Trocar o projeto do Firebase</button>
+        </div>
+        <div id="sync-dentro" style="display:grid; gap:12px" hidden>
+          <p style="margin:0">Conectado como <strong id="sync-quem"></strong>.</p>
+          <div class="form-acoes">
+            <button class="btn" id="sync-agora" type="button">Sincronizar agora</button>
+            <button class="btn" id="sync-sair" type="button">Sair</button>
+          </div>
+        </div>
+        <p class="nota" id="sync-msg" role="status"></p>
+      </details>
+
+      <details class="painel backup" id="backup">
+        <summary><h3>Backup dos dados</h3></summary>
+        <p class="nota">Gera um texto com todos os meses para você guardar ou levar para outro aparelho. Para restaurar, cole o texto aqui e toque em Restaurar.</p>
+        <label class="sr" for="bk-texto">Texto do backup</label>
+        <textarea id="bk-texto" spellcheck="false" autocomplete="off"></textarea>
+        <div class="form-acoes">
+          <button class="btn" id="bk-gerar" type="button">Gerar e copiar</button>
+          <button class="btn" id="bk-restaurar" type="button">Restaurar</button>
+          <button class="btn" id="bk-abrir" type="button" hidden>Abrir arquivo</button>
+          <button class="btn" id="bk-salvar" type="button" hidden>Salvar em arquivo</button>
+          <input type="file" id="bk-arquivo" accept=".txt,.json,text/plain,application/json" hidden>
+        </div>
+        <p class="nota" id="bk-msg" role="status"></p>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden><span id="toast-txt"></span><button type="button" id="toast-desfazer">Desfazer</button></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const PRIORIDADES = {
+    alta:  { rotulo: "Alta",  dica: "Não pode atrasar", ordem: 0 },
+    media: { rotulo: "Média", dica: "Importante",        ordem: 1 },
+    baixa: { rotulo: "Baixa", dica: "Pode esperar ou ser cortada", ordem: 2 },
+  };
+  const CATEGORIAS = ["Moradia", "Contas da casa", "Alimentação", "Transporte", "Saúde", "Educação",
+    "Cartão de crédito", "Dívidas e empréstimos", "Assinaturas", "Lazer", "Outros"];
+  const PREFIXO = "caixa-do-mes:";
+  const RE_MES = /^\d{4}-\d{2}$/;
+  const NO_APP = /CaixaDoMesApp/.test(navigator.userAgent);
+  const NO_PC = /CaixaDoMesDesktop/.test(navigator.userAgent);
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const novoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+  const clonar = (o) => JSON.parse(JSON.stringify(o));
+  const limitar = (n, min, max) => Math.min(max, Math.max(min, n));
+
+  // ---------- dinheiro (guardado em centavos inteiros) ----------
+  const fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  const fmtCurto = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const brl = (c) => fmtBRL.format((c || 0) / 100);
+  const brlCurto = (c) => fmtCurto.format(Math.round((c || 0) / 100));
+  function paraCentavos(txt) {
+    let s = String(txt ?? "").replace(/[^\d,.]/g, "");
+    if (!s) return 0;
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+    else if ((s.match(/\./g) || []).length > 1 || /^\d{1,3}\.\d{3}$/.test(s)) s = s.replace(/\./g, "");
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? Math.max(0, Math.round(n * 100)) : 0;
+  }
+  const paraTexto = (c) => (c ? (c / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
+
+  // ---------- meses ----------
+  function mesDeHoje() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+  function somarMes(m, delta) {
+    const [a, mm] = m.split("-").map(Number);
+    const d = new Date(a, mm - 1 + delta, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+  function nomeMes(m) {
+    const [a, mm] = m.split("-").map(Number);
+    const t = new Date(a, mm - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  function mesCurto(m) {
+    const [a, mm] = m.split("-").map(Number);
+    const t = new Date(a, mm - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+    return { mes: t.charAt(0).toUpperCase() + t.slice(1), ano: String(a).slice(2), texto: `${t}/${String(a).slice(2)}` };
+  }
+
+  // ---------- dados ----------
+  const vazio = () => ({ rendas: [{ nome: "", valor: 0 }, { nome: "", valor: 0 }], gastos: [], guardar: { valor: 0, feito: false } });
+  function exemplo() {
+    const g = (descricao, valor, prioridade, categoria, dia, pago = false) => ({ id: novoId(), descricao, valor, prioridade, categoria, dia, pago });
+    return {
+      exemplo: true,
+      rendas: [{ nome: "Salário", valor: 420000 }, { nome: "Freelas", valor: 85000 }],
+      guardar: { valor: 50000, feito: false },
+      gastos: [
+        g("Aluguel", 140000, "alta", "Moradia", 5, true),
+        g("Mercado", 85000, "alta", "Alimentação", 10),
+        g("Conta de luz", 18990, "alta", "Contas da casa", 12),
+        g("Fatura do cartão", 62000, "alta", "Cartão de crédito", 20),
+        g("Transporte", 30000, "media", "Transporte", 1, true),
+        g("Internet", 9990, "media", "Contas da casa", 15),
+        g("Curso de inglês", 29000, "media", "Educação", 25),
+        g("Academia", 11990, "baixa", "Saúde", 8),
+        g("Streaming", 5590, "baixa", "Assinaturas", 18),
+      ],
+    };
+  }
+  function normalizar(d) {
+    const out = vazio();
+    if (!d || typeof d !== "object") return out;
+    if (d.exemplo) out.exemplo = true;
+    for (let i = 0; i < 2; i++) {
+      const r = d.rendas && typeof d.rendas === "object" ? Object.values(d.rendas)[i] : null;
+      if (r) out.rendas[i] = { nome: String(r.nome || "").slice(0, 40), valor: Math.max(0, Math.round(Number(r.valor) || 0)) };
+    }
+    if (Number(d.atualizado) > 0) out.atualizado = Number(d.atualizado);
+    if (d.guardar && typeof d.guardar === "object") {
+      out.guardar = { valor: Math.max(0, Math.round(Number(d.guardar.valor) || 0)), feito: !!d.guardar.feito };
+    }
+    if (d.gastos && typeof d.gastos === "object") {
+      out.gastos = Object.values(d.gastos).filter((x) => x && typeof x === "object").map((x) => {
+        const g = {
+          id: String(x.id || novoId()),
+          descricao: String(x.descricao || "Sem nome").slice(0, 60),
+          valor: Math.max(0, Math.round(Number(x.valor) || 0)),
+          prioridade: PRIORIDADES[x.prioridade] ? x.prioridade : "media",
+          categoria: CATEGORIAS.includes(x.categoria) ? x.categoria : "Outros",
+          dia: x.dia >= 1 && x.dia <= 31 ? Math.round(x.dia) : null,
+          pago: !!x.pago,
+        };
+        if (x.serie && (x.tipo === "parcela" || x.tipo === "fixa")) {
+          g.serie = String(x.serie);
+          g.tipo = x.tipo;
+          g.n = Math.max(1, Math.round(Number(x.n) || 1));
+          g.total = Math.max(g.n, Math.round(Number(x.total) || 1));
+        }
+        return g;
+      });
+    }
+    return out;
+  }
+
+  // ---------- armazenamento ----------
+  // Padrão: este navegador/aparelho. Dentro do Claude, usa o espaço privado da sua conta.
+  const local = {
+    tipo: "local",
+    async todos() {
+      const out = {};
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          const m = k && k.startsWith(PREFIXO) ? k.slice(PREFIXO.length) : "";
+          if (!RE_MES.test(m)) continue;
+          try { out[m] = JSON.parse(localStorage.getItem(k)); } catch { /* registro corrompido: ignora */ }
+        }
+      } catch { /* armazenamento bloqueado */ }
+      return out;
+    },
+    async salvar(m, d) {
+      localStorage.setItem(PREFIXO + m, JSON.stringify(d));
+    },
+  };
+
+  async function conectarConta() {
+    if (!window.claude || typeof window.claude.use !== "function") return null;
+    try {
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (!db || !user) return null;
+      const uid = await user.id();
+      if (!uid) return null;
+      const col = db.collection("data/users/" + uid);
+      return {
+        tipo: "conta",
+        async todos() {
+          const q = await col.get();
+          const out = {};
+          for (const s of q.docs) if (RE_MES.test(s.id)) out[s.id] = clonar(s.data());
+          return out;
+        },
+        async salvar(m, d) { await col.doc(m).set(d); },
+      };
+    } catch { return null; }
+  }
+
+  let store = local;
+  let cache = {};            // mês -> dados de todos os meses salvos
+  const sujos = new Set();   // meses com alterações ainda não gravadas
+  let mes = mesDeHoje();
+  let dados = vazio();
+  let editandoId = null;
+  let excluindoId = null;
+  let filtro = "todas";
+  let timer = null;
+  let fila = Promise.resolve();
+  let centralizado = null;
+
+  function setStatus(s) {
+    const el = $("status");
+    if (s === "ok" && sessao && syncAtivo()) {
+      const t = textoSync();
+      el.dataset.s = t.s;
+      el.textContent = t.texto;
+      return;
+    }
+    el.dataset.s = s;
+    const onde = store.tipo === "conta" ? "na sua conta" : NO_APP ? "neste aparelho" : NO_PC ? "neste computador" : "neste navegador";
+    el.textContent = {
+      ok: `Salvo ${onde}`,
+      salvando: "Salvando…",
+      erro: "Não foi possível salvar. Os dados ficam só nesta tela.",
+      carregando: "Carregando…",
+    }[s] || "";
+  }
+
+  // Marca o mês para gravar e anota a hora da alteração (a sincronização fica com a versão mais nova).
+  function marcar(m) {
+    sujos.add(m);
+    if (cache[m]) cache[m].atualizado = Date.now();
+  }
+  function agendarSalvar() {
+    setStatus("salvando");
+    clearTimeout(timer);
+    timer = setTimeout(salvarPendente, 600);
+  }
+  function salvarPendente() {
+    clearTimeout(timer);
+    timer = null;
+    if (!sujos.size) return fila;
+    const lote = [...sujos].filter((m) => cache[m]).map((m) => [m, clonar(cache[m])]);
+    sujos.clear();
+    fila = fila.then(async () => {
+      for (const [m, d] of lote) {
+        try {
+          await store.salvar(m, d);
+        } catch {
+          // Conta sem permissão de escrita: guarda neste navegador.
+          if (store.tipo === "local") { setStatus("erro"); return; }
+          store = local;
+          try { await local.salvar(m, d); } catch { setStatus("erro"); return; }
+        }
+      }
+      if (!sujos.size) setStatus("ok");
+      if (sessao && syncAtivo()) enviarMeses(Object.fromEntries(lote));
+    });
+    return fila;
+  }
+
+  function abrirMes(novo) {
+    mes = novo;
+    resetarForm();
+    excluindoId = null;
+    dados = cache[mes] || (Object.keys(cache).length === 0 && mes === mesDeHoje() ? exemplo() : vazio());
+    preencherRendas();
+    renderTudo();
+  }
+
+  // Pega (ou cria) um mês futuro. Um mês novo começa com as mesmas rendas do mês aberto.
+  function obterMes(m) {
+    if (!cache[m]) cache[m] = { rendas: clonar(dados.rendas), gastos: [], guardar: { valor: dados.guardar.valor, feito: false } };
+    return cache[m];
+  }
+
+  function alterou() {
+    if (dados.exemplo) delete dados.exemplo;
+    cache[mes] = dados;
+    marcar(mes);
+    renderTudo();
+    agendarSalvar();
+  }
+
+  // ---------- cálculos ----------
+  const porPrioridade = (a, b) =>
+    PRIORIDADES[a.prioridade].ordem - PRIORIDADES[b.prioridade].ordem ||
+    (a.dia ?? 99) - (b.dia ?? 99) ||
+    b.valor - a.valor;
+
+  function calcular(d) {
+    const renda = d.rendas.reduce((s, r) => s + r.valor, 0);
+    const prio = { alta: 0, media: 0, baixa: 0 };
+    let total = 0, pago = 0;
+    for (const g of d.gastos) {
+      total += g.valor;
+      prio[g.prioridade] += g.valor;
+      if (g.pago) pago += g.valor;
+    }
+    let acum = 0;
+    const ordem = [...d.gastos].sort(porPrioridade).map((g) => {
+      acum += g.valor;
+      return { g, saldo: renda - acum, cabe: acum <= renda };
+    });
+    const sobra = renda - total;
+    const guardar = d.guardar ? d.guardar.valor : 0;
+    return { renda, total, prio, pago, aPagar: total - pago, sobra, caixa: renda - pago, ordem, guardar, livre: sobra - guardar };
+  }
+
+  function situacaoVenc(g) {
+    if (g.pago || !g.dia) return null;
+    const hoje = mesDeHoje();
+    if (mes < hoje) return "atrasada";
+    if (mes > hoje) return null;
+    const d = new Date().getDate();
+    if (g.dia < d) return "atrasada";
+    if (g.dia === d) return "hoje";
+    return null;
+  }
+  const rotuloSerie = (g) => (g.tipo === "parcela" ? `parcela ${g.n}/${g.total}` : g.tipo === "fixa" ? "todo mês" : "");
+
+  // ---------- render ----------
+  function preencherRendas() {
+    dados.rendas.forEach((r, i) => {
+      $(`renda${i}-nome`).value = r.nome;
+      $(`renda${i}-valor`).value = paraTexto(r.valor);
+    });
+    $("g-valor").value = paraTexto(dados.guardar.valor);
+    $("g-feito").checked = dados.guardar.feito;
+  }
+
+  function renderTudo() {
+    $("mes-rotulo").textContent = nomeMes(mes);
+    $("mes-hoje").hidden = mes === mesDeHoje();
+    renderMeses();
+    renderAvisos();
+    renderResumo();
+    renderGuardar();
+    renderLista();
+    renderOrdem();
+  }
+
+  function renderMeses() {
+    const hoje = mesDeHoje();
+    const salvos = Object.keys(cache).sort();
+    const ini = [somarMes(hoje, -1), mes, salvos[0]].filter(Boolean).sort()[0];
+    const fim = [somarMes(hoje, 5), mes, salvos[salvos.length - 1]].filter(Boolean).sort().pop();
+    const lista = [];
+    for (let m = ini; m <= fim && lista.length < 120; m = somarMes(m, 1)) lista.push(m);
+    const el = $("meses");
+    el.innerHTML = lista.map((m) => {
+      const d = m === mes ? dados : cache[m];
+      const c = mesCurto(m);
+      const tem = d && (d.gastos.length || d.rendas.some((r) => r.valor) || d.guardar.valor);
+      let corpo = `<span class="vazio-mes">sem contas</span>`;
+      if (tem) {
+        const k = calcular(d);
+        corpo = `<span class="t">${d.gastos.length ? `${d.gastos.length} ${d.gastos.length === 1 ? "conta" : "contas"} · ${brlCurto(k.total)}` : "sem contas"}</span>` +
+          `<span class="s ${k.sobra < 0 ? "neg" : "pos"}">${k.sobra < 0 ? "falta " : "sobra "}${brlCurto(Math.abs(k.sobra))}</span>` +
+          (k.guardar ? `<span class="g">${d.guardar.feito ? "guardou" : "guardar"} ${brlCurto(k.guardar)}</span>` : "");
+      }
+      return `<button type="button" data-mes="${m}" aria-current="${m === mes}" aria-label="${esc(nomeMes(m))}">` +
+        `<span class="m">${c.mes} <small>${c.ano}</small>${m === hoje ? "<i>hoje</i>" : ""}</span>${corpo}</button>`;
+    }).join("");
+    if (centralizado !== mes) {
+      centralizado = mes;
+      const b = el.querySelector('[aria-current="true"]');
+      if (b) el.scrollLeft = b.offsetLeft - el.clientWidth / 2 + b.offsetWidth / 2;
+    }
+  }
+
+  function renderAvisos() {
+    $("aviso-exemplo").hidden = !dados.exemplo;
+    const anteriores = Object.keys(cache).filter((m) => m < mes).sort();
+    const origem = anteriores[anteriores.length - 1];
+    const vazioMes = !dados.exemplo && dados.gastos.length === 0 && dados.rendas.every((r) => !r.valor && !r.nome) && !dados.guardar.valor;
+    const mostrar = vazioMes && !!origem;
+    $("aviso-copiar").hidden = !mostrar;
+    if (mostrar) {
+      $("aviso-copiar-txt").textContent = `${nomeMes(mes)} está em branco. Quer copiar as rendas e as contas de ${nomeMes(origem).toLowerCase()}? Todas voltam como “a pagar”. Parcelas não são copiadas.`;
+      $("copiar-mes").dataset.origem = origem;
+    }
+  }
+
+  function renderResumo() {
+    const c = calcular(dados);
+    $("r-renda").textContent = brl(c.renda);
+    const fontes = dados.rendas.map((r, i) => (r.valor > 0 ? r.nome || `Fonte ${i + 1}` : null)).filter(Boolean);
+    $("r-renda-sub").textContent = fontes.length ? fontes.join(" + ") : "Informe suas rendas";
+    $("r-gastos").textContent = brl(c.total);
+    const n = dados.gastos.length;
+    $("r-gastos-sub").textContent = n ? `${n} ${n === 1 ? "conta" : "contas"}${c.renda ? ` · ${Math.round((c.total / c.renda) * 100)}% da renda` : ""}` : "Nenhuma conta ainda";
+
+    const neg = c.sobra < 0;
+    $("r-sobra-box").classList.toggle("negativo", neg);
+    $("r-sobra-rot").textContent = neg ? "Vai faltar" : "Vai sobrar";
+    $("r-sobra").textContent = brl(Math.abs(c.sobra));
+    $("r-sobra-sub").textContent = c.renda
+      ? neg ? "A renda não cobre todas as contas"
+        : c.guardar ? `Guardando ${brl(c.guardar)}, ${c.livre >= 0 ? `ficam ${brl(c.livre)} livres` : `faltam ${brl(-c.livre)}`}`
+        : `${Math.round((c.sobra / c.renda) * 100)}% da renda livre`
+      : "Renda menos gastos";
+
+    // barra: gastos por prioridade dentro da renda
+    const escala = Math.max(c.renda, c.total, 1);
+    const pct = (v) => `${(v / escala) * 100}%`;
+    let html = "";
+    for (const k of ["alta", "media", "baixa"]) if (c.prio[k]) html += `<span class="s-${k}" style="width:${pct(c.prio[k])}"></span>`;
+    const guardaNaBarra = Math.min(c.guardar, Math.max(c.sobra, 0));
+    if (guardaNaBarra > 0) html += `<span class="s-guardar" style="width:${pct(guardaNaBarra)}"></span>`;
+    if (c.sobra - guardaNaBarra > 0) html += `<span class="s-sobra" style="width:${pct(c.sobra - guardaNaBarra)}"></span>`;
+    if (c.total > c.renda && c.renda > 0) html += `<i class="limite" style="left:calc(${pct(c.renda)} - 1px)" title="Limite da renda"></i>`;
+    $("barra").innerHTML = html;
+    $("barra").setAttribute("aria-label", `Gastos somam ${brl(c.total)} de uma renda de ${brl(c.renda)}`);
+
+    const pr = (v) => (c.renda ? ` · ${Math.round((v / c.renda) * 100)}%` : "");
+    $("legenda").innerHTML = ["alta", "media", "baixa"].map((k) =>
+      `<li><i style="background:var(--${k})"></i>Prioridade ${PRIORIDADES[k].rotulo.toLowerCase()} <b>${brl(c.prio[k])}</b>${pr(c.prio[k])}</li>`
+    ).join("") +
+      (c.guardar ? `<li><i style="background:var(--accent)"></i>Guardar <b>${brl(c.guardar)}</b></li>` : "") +
+      (c.livre > 0 ? `<li><i style="background:repeating-linear-gradient(135deg, var(--accent) 0 2px, transparent 2px 4px)"></i>${c.guardar ? "Livre" : "Sobra"} <b>${brl(c.livre)}</b></li>` : "");
+
+    $("situacao").innerHTML =
+      `<span>Já pago <b>${brl(c.pago)}</b></span>` +
+      `<span>Falta pagar <b>${brl(c.aPagar)}</b></span>` +
+      `<span>Disponível agora <b>${brl(c.caixa)}</b></span>`;
+  }
+
+  function renderLista() {
+    const el = $("lista");
+    document.querySelectorAll("[data-filtro]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.filtro === filtro)));
+    if (!dados.gastos.length) {
+      el.innerHTML = `<p class="vazio">Nenhum gasto em ${esc(nomeMes(mes).toLowerCase())}. Use <strong>Novo gasto</strong> para adicionar a primeira conta.</p>`;
+      return;
+    }
+    const visiveis = dados.gastos.filter((g) => filtro === "todas" || (filtro === "pagas" ? g.pago : !g.pago));
+    if (!visiveis.length) {
+      el.innerHTML = `<p class="vazio">${filtro === "pagas" ? "Nenhuma conta paga ainda." : "Tudo pago neste mês."}</p>`;
+      return;
+    }
+    let html = "";
+    for (const k of ["alta", "media", "baixa"]) {
+      const itens = visiveis.filter((g) => g.prioridade === k).sort(porPrioridade);
+      if (!itens.length) continue;
+      const sub = itens.reduce((s, g) => s + g.valor, 0);
+      html += `<section class="grupo"><header><span class="chip ${k}">${PRIORIDADES[k].rotulo}</span><span class="dica">${PRIORIDADES[k].dica}</span><span class="num">${brl(sub)}</span></header><ul class="gastos">`;
+      for (const g of itens) {
+        const sit = situacaoVenc(g);
+        const meta = [esc(g.categoria)];
+        if (g.dia) meta.push(`vence dia ${g.dia}`);
+        if (g.serie) meta.push(`<span class="chip serie">${rotuloSerie(g)}</span>`);
+        if (sit === "atrasada") meta.push(`<span class="chip atrasada">atrasada</span>`);
+        if (sit === "hoje") meta.push(`<span class="chip hoje">vence hoje</span>`);
+        const ctrl = excluindoId === g.id
+          ? `<span class="pergunta">Excluir:</span>
+             <button class="mini perigo" type="button" data-acao="excluir-um">Só este mês</button>
+             <button class="mini perigo" type="button" data-acao="excluir-prox">Este e os próximos</button>
+             <button class="mini" type="button" data-acao="excluir-cancelar">Cancelar</button>`
+          : `<select data-acao="prio" aria-label="Prioridade de ${esc(g.descricao)}">${Object.keys(PRIORIDADES).map((p) => `<option value="${p}"${p === g.prioridade ? " selected" : ""}>${PRIORIDADES[p].rotulo}</option>`).join("")}</select>
+             <button class="mini" type="button" data-acao="editar">Editar</button>
+             <button class="mini perigo" type="button" data-acao="excluir">Excluir</button>`;
+        html += `<li class="gasto${g.pago ? " pago" : ""}" data-id="${esc(g.id)}">
+          <label class="check"><input type="checkbox" data-acao="pago" ${g.pago ? "checked" : ""}><span class="sr">Marcar ${esc(g.descricao)} como paga</span></label>
+          <div class="info"><span class="nome">${esc(g.descricao)}</span><span class="meta">${meta.join("<span aria-hidden=\"true\">·</span>")}</span></div>
+          <span class="valor">${brl(g.valor)}</span>
+          <div class="ctrl">${ctrl}</div>
+        </li>`;
+      }
+      html += `</ul></section>`;
+    }
+    el.innerHTML = html;
+  }
+
+  function renderOrdem() {
+    const c = calcular(dados);
+    const diag = $("diagnostico");
+    if (!dados.gastos.length) {
+      diag.className = "diagnostico ok";
+      diag.textContent = "Adicione seus gastos para ver em que ordem pagar.";
+      $("ordem").innerHTML = "";
+      return;
+    }
+    if (c.sobra >= 0) {
+      diag.className = "diagnostico ok";
+      diag.textContent = c.renda
+        ? `Todas as contas cabem na renda. Depois de pagar tudo, sobram ${brl(c.sobra)}.` +
+          (c.guardar ? (c.livre >= 0 ? ` Guardando ${brl(c.guardar)}, ficam ${brl(c.livre)} livres.` : ` Para guardar ${brl(c.guardar)}, faltariam ${brl(-c.livre)}.`) : "")
+        : "Informe suas rendas para saber quais contas cabem no mês.";
+    } else {
+      const falta = -c.sobra;
+      const baixas = c.prio.baixa;
+      let txt = `Faltam ${brl(falta)} para cobrir todas as contas. `;
+      if (baixas >= falta) txt += `Adiar ou cortar contas de prioridade baixa (${brl(baixas)} no total) resolve o mês.`;
+      else if (baixas > 0) txt += `Mesmo sem as contas de prioridade baixa (${brl(baixas)}), ainda faltariam ${brl(falta - baixas)}. Reveja as de prioridade média.`;
+      else txt += `Reveja as contas de prioridade média ou busque renda extra.`;
+      diag.className = "diagnostico falta";
+      diag.textContent = txt;
+    }
+    let html = "";
+    let cortou = false;
+    c.ordem.forEach((o, i) => {
+      if (!o.cabe && !cortou) {
+        cortou = true;
+        html += `<tr class="corte"><td colspan="5">A renda acaba aqui</td></tr>`;
+      }
+      html += `<tr class="${o.cabe ? "" : "nao-cabe"}">
+        <td class="n pos">${i + 1}</td>
+        <td>${esc(o.g.descricao)}${o.g.tipo === "parcela" ? ` <span class="chip serie">${o.g.n}/${o.g.total}</span>` : ""}${o.g.pago ? ` <span class="chip paga">paga</span>` : ""}</td>
+        <td><span class="chip ${o.g.prioridade}">${PRIORIDADES[o.g.prioridade].rotulo}</span></td>
+        <td class="n">${brl(o.g.valor)}</td>
+        <td class="n saldo">${o.saldo < 0 ? "−" : ""}${brl(Math.abs(o.saldo))}</td>
+      </tr>`;
+    });
+    $("ordem").innerHTML = html;
+  }
+
+  // ---------- formulário ----------
+  const selCat = $("f-cat");
+  selCat.innerHTML = CATEGORIAS.map((c) => `<option>${esc(c)}</option>`).join("");
+  selCat.value = "Outros";
+
+  const repeticao = () => document.querySelector('input[name="f-rep"]:checked')?.value || "unica";
+  function atualizarRepeticao() {
+    const rep = repeticao();
+    const editando = !!editandoId;
+    $("f-rep-box").hidden = editando;
+    $("f-n-box").hidden = editando || rep === "unica";
+    $("f-valor-rot").textContent = !editando && rep === "parcelada" ? "Valor da parcela" : "Valor";
+    if (editando || rep === "unica") return;
+    const n = limitar(Math.round(Number($("f-n").value) || 2), 2, 60);
+    const fim = somarMes(mes, n - 1);
+    $("f-n-rot").textContent = rep === "parcelada" ? "Número de parcelas" : "Por quantos meses";
+    const valor = paraCentavos($("f-valor").value);
+    $("f-n-nota").textContent = rep === "parcelada"
+      ? `De ${mesCurto(mes).texto} a ${mesCurto(fim).texto}${valor ? `, total ${brl(valor * n)}` : ""}.`
+      : `Lançada todo mês, de ${mesCurto(mes).texto} a ${mesCurto(fim).texto}.`;
+  }
+  document.querySelectorAll('input[name="f-rep"]').forEach((r) => r.addEventListener("change", () => {
+    if (repeticao() === "fixa" && Number($("f-n").value) < 12) $("f-n").value = 12;
+    atualizarRepeticao();
+  }));
+  $("f-n").addEventListener("input", atualizarRepeticao);
+  $("f-valor").addEventListener("input", atualizarRepeticao);
+
+  function resetarForm() {
+    $("form-gasto").reset();
+    selCat.value = "Outros";
+    $("f-prio-media").checked = true;
+    $("f-rep-unica").checked = true;
+    $("f-n").value = 2;
+    $("f-erro").hidden = true;
+    $("t-form").textContent = "Novo gasto";
+    $("f-salvar").textContent = "Adicionar gasto";
+    $("f-cancelar").hidden = true;
+    $("f-prox-box").hidden = true;
+    editandoId = null;
+    atualizarRepeticao();
+  }
+
+  $("form-gasto").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const descricao = $("f-desc").value.trim();
+    const valor = paraCentavos($("f-valor").value);
+    const diaTxt = $("f-dia").value.trim();
+    const dia = diaTxt ? Math.round(Number(diaTxt)) : null;
+    const erro = !descricao ? "Escreva uma descrição para o gasto."
+      : !valor ? "Informe um valor maior que zero, por exemplo 150,00."
+      : dia !== null && !(dia >= 1 && dia <= 31) ? "O dia de vencimento vai de 1 a 31."
+      : "";
+    if (erro) {
+      $("f-erro").textContent = erro;
+      $("f-erro").hidden = false;
+      (!descricao ? $("f-desc") : !valor ? $("f-valor") : $("f-dia")).focus();
+      return;
+    }
+    const prioridade = document.querySelector('input[name="f-prio"]:checked')?.value || "media";
+    const item = { descricao, valor, prioridade, categoria: selCat.value, dia };
+    let aviso = null;
+    if (editandoId) {
+      const g = dados.gastos.find((x) => x.id === editandoId);
+      if (g) {
+        Object.assign(g, item);
+        if (g.serie && $("f-prox").checked) {
+          for (const m of Object.keys(cache)) {
+            if (m <= mes) continue;
+            for (const x of cache[m].gastos) if (x.serie === g.serie) { Object.assign(x, item); marcar(m); }
+          }
+          aviso = "Gasto atualizado neste mês e nos próximos";
+        } else aviso = "Gasto atualizado";
+      }
+    } else {
+      const rep = repeticao();
+      const n = rep === "unica" ? 1 : limitar(Math.round(Number($("f-n").value) || 2), 2, 60);
+      const serie = n > 1 ? novoId() : null;
+      for (let k = 0; k < n; k++) {
+        const m = somarMes(mes, k);
+        const g = { id: novoId(), pago: false, ...item };
+        if (serie) Object.assign(g, { serie, tipo: rep === "parcelada" ? "parcela" : "fixa", n: k + 1, total: n });
+        if (k === 0) dados.gastos.push(g);
+        else { obterMes(m).gastos.push(g); marcar(m); }
+      }
+      if (n > 1) aviso = `${rep === "parcelada" ? `${n} parcelas lançadas` : "Conta lançada"} de ${mesCurto(mes).texto} a ${mesCurto(somarMes(mes, n - 1)).texto}`;
+    }
+    resetarForm();
+    alterou();
+    if (aviso) mostrarToast(aviso, null);
+    $("f-desc").focus();
+  });
+  $("f-cancelar").addEventListener("click", resetarForm);
+  $("f-valor").addEventListener("blur", (e) => { const c = paraCentavos(e.target.value); e.target.value = paraTexto(c); });
+
+  // ---------- rendas ----------
+  [0, 1].forEach((i) => {
+    $(`renda${i}-nome`).addEventListener("input", (e) => { dados.rendas[i].nome = e.target.value.slice(0, 40); alterouResumo(); });
+    $(`renda${i}-valor`).addEventListener("input", (e) => { dados.rendas[i].valor = paraCentavos(e.target.value); alterouResumo(); });
+    $(`renda${i}-valor`).addEventListener("blur", (e) => { e.target.value = paraTexto(dados.rendas[i].valor); });
+  });
+  function alterouResumo() {
+    if (dados.exemplo) delete dados.exemplo;
+    cache[mes] = dados;
+    marcar(mes);
+    renderMeses();
+    renderAvisos();
+    renderResumo();
+    renderGuardar();
+    renderOrdem();
+    agendarSalvar();
+  }
+
+  // ---------- guardar dinheiro ----------
+  function renderGuardar() {
+    const c = calcular(dados);
+    $("g-nota").textContent = nomeMes(mes);
+    $("g-sobra").textContent = (c.sobra < 0 ? "−" : "") + brl(Math.abs(c.sobra));
+    $("g-guardar").textContent = (c.guardar ? "−" : "") + brl(c.guardar);
+    $("g-livre").textContent = (c.livre < 0 ? "−" : "") + brl(Math.abs(c.livre));
+    $("g-livre-linha").classList.toggle("neg", c.livre < 0);
+    $("g-tudo").disabled = c.sobra <= 0;
+    $("g-tudo").textContent = c.sobra > 0 ? `Tudo que sobra (${brl(c.sobra)})` : "Tudo que sobra";
+    const aviso = $("g-aviso");
+    aviso.hidden = !(c.guardar && c.livre < 0);
+    if (!aviso.hidden) {
+      aviso.textContent = c.sobra <= 0
+        ? `Este mês não sobra dinheiro. Para guardar ${brl(c.guardar)}, seria preciso cortar ${brl(-c.livre)} em gastos.`
+        : `Você quer guardar mais do que sobra. Faltam ${brl(-c.livre)}; o máximo é ${brl(c.sobra)}.`;
+    }
+    $("g-repetir").hidden = !c.guardar;
+    $("g-repetir").textContent = `Guardar ${brl(c.guardar)} também nos próximos 11 meses`;
+
+    let total = 0, meses = 0, previsto = 0;
+    const todos = { ...cache, [mes]: dados };
+    for (const [m, d] of Object.entries(todos)) {
+      if (!d.guardar.valor) continue;
+      if (d.guardar.feito) { total += d.guardar.valor; meses++; }
+      else if (m >= mes) previsto += d.guardar.valor;
+    }
+    $("g-total").textContent = brl(total);
+    $("g-total-sub").textContent = (meses
+      ? `Somando ${meses} ${meses === 1 ? "mês marcado" : "meses marcados"} como “já guardei”.`
+      : "Marque “Já guardei este valor” quando separar o dinheiro.") +
+      (previsto ? ` Planejado daqui pra frente: ${brl(previsto)}.` : "");
+  }
+
+  $("g-valor").addEventListener("input", (e) => { dados.guardar.valor = paraCentavos(e.target.value); alterouResumo(); });
+  $("g-valor").addEventListener("blur", (e) => { e.target.value = paraTexto(dados.guardar.valor); });
+  $("g-feito").addEventListener("change", (e) => { dados.guardar.feito = e.target.checked; alterouResumo(); });
+  function definirGuardar(valor) {
+    dados.guardar.valor = valor;
+    $("g-valor").value = paraTexto(valor);
+    alterouResumo();
+  }
+  document.querySelectorAll("[data-valor]").forEach((b) => b.addEventListener("click", () => definirGuardar(Number(b.dataset.valor))));
+  $("g-tudo").addEventListener("click", () => {
+    const sobra = calcular(dados).sobra;
+    if (sobra > 0) definirGuardar(sobra);
+  });
+  $("g-repetir").addEventListener("click", () => {
+    const valor = dados.guardar.valor;
+    for (let k = 1; k <= 11; k++) {
+      const m = somarMes(mes, k);
+      obterMes(m).guardar.valor = valor;
+      marcar(m);
+    }
+    alterou();
+    mostrarToast(`${brl(valor)} por mês até ${mesCurto(somarMes(mes, 11)).texto}`, null);
+  });
+
+  // ---------- ações da lista ----------
+  let desfazer = null;
+  let toastTimer = null;
+  function mostrarToast(txt, acaoDesfazer) {
+    desfazer = acaoDesfazer;
+    $("toast-txt").textContent = txt;
+    $("toast-desfazer").hidden = !acaoDesfazer;
+    $("toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $("toast").hidden = true; desfazer = null; }, acaoDesfazer ? 7000 : 3000);
+  }
+  $("toast-desfazer").addEventListener("click", () => {
+    if (desfazer) desfazer();
+    desfazer = null;
+    $("toast").hidden = true;
+  });
+
+  function excluir(g, proximos) {
+    const removidos = [];
+    if (editandoId === g.id) resetarForm();
+    dados.gastos = dados.gastos.filter((x) => (x === g ? (removidos.push([mes, x]), false) : true));
+    if (proximos && g.serie) {
+      for (const m of Object.keys(cache)) {
+        if (m <= mes) continue;
+        cache[m].gastos = cache[m].gastos.filter((x) => (x.serie === g.serie ? (removidos.push([m, x]), false) : true));
+        marcar(m);
+      }
+    }
+    excluindoId = null;
+    alterou();
+    const qtd = removidos.length;
+    mostrarToast(qtd > 1 ? `“${g.descricao}” excluído de ${qtd} meses` : `“${g.descricao}” excluído`, () => {
+      for (const [m, x] of removidos) {
+        const alvo = m === mes ? dados : obterMes(m);
+        alvo.gastos.push(x);
+        marcar(m);
+      }
+      alterou();
+    });
+  }
+
+  $("lista").addEventListener("change", (e) => {
+    const li = e.target.closest(".gasto");
+    if (!li) return;
+    const g = dados.gastos.find((x) => x.id === li.dataset.id);
+    if (!g) return;
+    if (e.target.dataset.acao === "pago") g.pago = e.target.checked;
+    if (e.target.dataset.acao === "prio") g.prioridade = e.target.value;
+    alterou();
+  });
+  $("lista").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-acao]");
+    if (!b) return;
+    const li = b.closest(".gasto");
+    const g = dados.gastos.find((x) => x.id === li.dataset.id);
+    if (!g) return;
+    const acao = b.dataset.acao;
+    if (acao === "excluir") {
+      const temProximos = g.serie && Object.keys(cache).some((m) => m > mes && cache[m].gastos.some((x) => x.serie === g.serie));
+      if (temProximos) { excluindoId = g.id; renderLista(); }
+      else excluir(g, false);
+    }
+    if (acao === "excluir-um") excluir(g, false);
+    if (acao === "excluir-prox") excluir(g, true);
+    if (acao === "excluir-cancelar") { excluindoId = null; renderLista(); }
+    if (acao === "editar") {
+      resetarForm();
+      editandoId = g.id;
+      $("f-desc").value = g.descricao;
+      $("f-valor").value = paraTexto(g.valor);
+      $("f-dia").value = g.dia ?? "";
+      selCat.value = g.categoria;
+      $(`f-prio-${g.prioridade}`).checked = true;
+      $("t-form").textContent = "Editar gasto";
+      $("f-salvar").textContent = "Salvar alteração";
+      $("f-cancelar").hidden = false;
+      $("f-prox-box").hidden = !g.serie;
+      $("f-prox").checked = true;
+      atualizarRepeticao();
+      $("t-form").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+      $("f-desc").focus({ preventScroll: true });
+    }
+  });
+  document.querySelectorAll("[data-filtro]").forEach((b) => b.addEventListener("click", () => { filtro = b.dataset.filtro; renderLista(); }));
+
+  // ---------- navegação e avisos ----------
+  $("meses").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-mes]");
+    if (b && b.dataset.mes !== mes) abrirMes(b.dataset.mes);
+  });
+  $("mes-ant").addEventListener("click", () => abrirMes(somarMes(mes, -1)));
+  $("mes-prox").addEventListener("click", () => abrirMes(somarMes(mes, 1)));
+  $("mes-hoje").addEventListener("click", () => abrirMes(mesDeHoje()));
+  $("limpar-exemplo").addEventListener("click", () => {
+    dados = vazio();
+    preencherRendas();
+    resetarForm();
+    alterou();
+  });
+  $("copiar-mes").addEventListener("click", (e) => {
+    const origem = e.currentTarget.dataset.origem;
+    const base = cache[origem];
+    if (!base) return;
+    dados = {
+      rendas: clonar(base.rendas),
+      guardar: { valor: base.guardar.valor, feito: false },
+      gastos: base.gastos.filter((g) => g.tipo !== "parcela").map((g) => ({
+        id: novoId(), descricao: g.descricao, valor: g.valor, prioridade: g.prioridade, categoria: g.categoria, dia: g.dia, pago: false,
+      })),
+    };
+    preencherRendas();
+    alterou();
+    mostrarToast(`Contas de ${nomeMes(origem).toLowerCase()} copiadas`, null);
+  });
+
+  // ---------- backup ----------
+  let restaurarPronto = null;
+  $("bk-gerar").addEventListener("click", () => {
+    const meses = {};
+    for (const m of Object.keys(cache).sort()) meses[m] = cache[m];
+    const texto = JSON.stringify({ app: "caixa-do-mes", versao: 1, gerado: new Date().toISOString(), meses });
+    const ta = $("bk-texto");
+    ta.value = texto;
+    restaurarPronto = null;
+    $("bk-restaurar").textContent = "Restaurar";
+    const n = Object.keys(meses).length;
+    const selecionar = () => { ta.focus(); ta.select(); $("bk-msg").textContent = `Backup de ${n} ${n === 1 ? "mês" : "meses"} gerado. O texto está selecionado: copie e guarde num lugar seguro.`; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(
+        () => { $("bk-msg").textContent = `Backup de ${n} ${n === 1 ? "mês" : "meses"} copiado. Cole num lugar seguro, como suas notas ou e-mail.`; },
+        selecionar,
+      );
+    } else selecionar();
+  });
+  $("bk-texto").addEventListener("input", () => { restaurarPronto = null; $("bk-restaurar").textContent = "Restaurar"; });
+  $("bk-restaurar").addEventListener("click", () => {
+    if (restaurarPronto) {
+      for (const [m, d] of Object.entries(restaurarPronto)) { cache[m] = normalizar(d); marcar(m); }
+      const n = Object.keys(restaurarPronto).length;
+      restaurarPronto = null;
+      $("bk-restaurar").textContent = "Restaurar";
+      $("bk-texto").value = "";
+      $("bk-msg").textContent = `${n} ${n === 1 ? "mês restaurado" : "meses restaurados"}.`;
+      abrirMes(mes);
+      agendarSalvar();
+      return;
+    }
+    let obj = null;
+    try { obj = JSON.parse($("bk-texto").value.trim()); } catch { obj = null; }
+    const meses = obj && obj.app === "caixa-do-mes" && obj.meses && typeof obj.meses === "object"
+      ? Object.fromEntries(Object.entries(obj.meses).filter(([m]) => RE_MES.test(m)))
+      : null;
+    if (!meses || !Object.keys(meses).length) {
+      $("bk-msg").textContent = "Esse texto não é um backup do Caixa do Mês. Cole o texto inteiro gerado em “Gerar e copiar”.";
+      return;
+    }
+    restaurarPronto = meses;
+    const lista = Object.keys(meses).sort();
+    $("bk-msg").textContent = `O backup tem ${lista.length} ${lista.length === 1 ? "mês" : "meses"} (${mesCurto(lista[0]).texto} a ${mesCurto(lista[lista.length - 1]).texto}). Os meses que já existem aqui serão substituídos. ${NO_PC ? "Clique" : "Toque"} de novo para confirmar.`;
+    $("bk-restaurar").textContent = "Confirmar restauração";
+  });
+
+  // Arquivos de backup: abrir funciona fora do app Android; salvar, só com a página aberta como arquivo
+  // (programa de computador ou index.html no navegador), porque o app Android e o Claude não baixam arquivos.
+  $("bk-abrir").hidden = NO_APP;
+  $("bk-salvar").hidden = NO_APP || location.protocol !== "file:";
+  $("bk-abrir").addEventListener("click", () => $("bk-arquivo").click());
+  $("bk-arquivo").addEventListener("change", (e) => {
+    const arq = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!arq) return;
+    const leitor = new FileReader();
+    leitor.onload = () => {
+      $("bk-texto").value = String(leitor.result || "");
+      restaurarPronto = null;
+      $("bk-restaurar").click();
+    };
+    leitor.onerror = () => { $("bk-msg").textContent = "Não foi possível ler esse arquivo. Tente de novo ou cole o texto do backup."; };
+    leitor.readAsText(arq);
+  });
+  $("bk-salvar").addEventListener("click", () => {
+    const meses = {};
+    for (const m of Object.keys(cache).sort()) meses[m] = cache[m];
+    const texto = JSON.stringify({ app: "caixa-do-mes", versao: 1, gerado: new Date().toISOString(), meses });
+    const url = URL.createObjectURL(new Blob([texto], { type: "text/plain" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `caixa-do-mes-backup-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    const n = Object.keys(meses).length;
+    $("bk-msg").textContent = `Backup de ${n} ${n === 1 ? "mês" : "meses"} pronto para salvar.`;
+  });
+
+  // ---------- sincronização (Firebase: login por e-mail e Realtime Database) ----------
+  // Cada mês fica em usuarios/<id>/meses/<AAAA-MM>. Ao sincronizar, vale a versão alterada por último.
+  // Preencha aqui para deixar o projeto fixo no app; vazio, a pessoa cola o firebaseConfig no próprio app.
+  const FIREBASE_FIXO = { apiKey: "", databaseURL: "" };
+  const CHAVE_FIREBASE = PREFIXO + "_firebase";
+  let FIREBASE = FIREBASE_FIXO;
+  if (!FIREBASE_FIXO.apiKey) {
+    try { FIREBASE = JSON.parse(localStorage.getItem(CHAVE_FIREBASE) || "null") || { apiKey: "", databaseURL: "" }; }
+    catch { FIREBASE = { apiKey: "", databaseURL: "" }; }
+  }
+  const AUTH_URL = "https://identitytoolkit.googleapis.com/v1";
+  const TOKEN_URL = "https://securetoken.googleapis.com/v1/token";
+  const CHAVE_SESSAO = PREFIXO + "_sessao";
+  let sessao = null;
+  let sync = { estado: "", hora: 0 };
+  let sincronizando = null;
+
+  const syncPossivel = () => store.tipo === "local" && !window.claude;
+  const syncConfigurado = () => !!(FIREBASE.apiKey && FIREBASE.databaseURL);
+  const syncAtivo = () => syncPossivel() && syncConfigurado();
+  try { sessao = JSON.parse(localStorage.getItem(CHAVE_SESSAO) || "null"); } catch { sessao = null; }
+  function gravarSessao() {
+    try {
+      if (sessao) localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+      else localStorage.removeItem(CHAVE_SESSAO);
+    } catch { /* sem armazenamento: a sessão vale só nesta tela */ }
+  }
+
+  function textoSync() {
+    const hora = sync.hora ? new Date(sync.hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+    if (sync.estado === "sincronizando") return { s: "salvando", texto: "Sincronizando…" };
+    if (sync.estado === "offline") return { s: "salvando", texto: "Sem internet: salvo aqui, sincroniza quando voltar" };
+    if (sync.estado === "erro") return { s: "erro", texto: "Erro ao sincronizar. Os dados estão salvos aqui." };
+    if (sync.estado === "ok") return { s: "ok", texto: `Sincronizado${hora ? ` às ${hora}` : ""}` };
+    return { s: "ok", texto: "Salvo aqui" };
+  }
+  function setSync(estado, msg) {
+    sync.estado = estado;
+    if (estado === "ok") sync.hora = Date.now();
+    if (msg !== undefined) $("sync-msg").textContent = msg;
+    if (!timer && !sujos.size) setStatus("ok");
+  }
+
+  const ERROS_LOGIN = {
+    EMAIL_EXISTS: "Já existe uma conta com esse e-mail. Use Entrar.",
+    EMAIL_NOT_FOUND: "E-mail ou senha incorretos.",
+    INVALID_PASSWORD: "E-mail ou senha incorretos.",
+    INVALID_LOGIN_CREDENTIALS: "E-mail ou senha incorretos.",
+    INVALID_EMAIL: "Esse e-mail não é válido.",
+    MISSING_PASSWORD: "Digite a senha.",
+    WEAK_PASSWORD: "A senha precisa ter pelo menos 6 caracteres.",
+    TOO_MANY_ATTEMPTS_TRY_LATER: "Muitas tentativas. Espere alguns minutos e tente de novo.",
+    USER_DISABLED: "Essa conta foi desativada.",
+    OPERATION_NOT_ALLOWED: "O login por e-mail não está ativado no Firebase.",
+  };
+  class ErroSync extends Error {
+    constructor(codigo, offline) { super(codigo); this.codigo = codigo; this.offline = !!offline; }
+  }
+  async function chamar(url, opcoes) {
+    let r;
+    try { r = await fetch(url, opcoes); } catch { throw new ErroSync("SEM_INTERNET", true); }
+    const j = await r.json().catch(() => null);
+    if (!r.ok) {
+      const msg = (j && j.error && (j.error.message || j.error)) || `HTTP_${r.status}`;
+      throw new ErroSync(String(msg).split(" ")[0].replace(/:$/, ""));
+    }
+    return j;
+  }
+  const postarJSON = (url, corpo) => chamar(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+
+  async function token() {
+    if (sessao.expira - Date.now() > 60000) return sessao.idToken;
+    try {
+      const j = await chamar(`${TOKEN_URL}?key=${FIREBASE.apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(sessao.refreshToken)}`,
+      });
+      Object.assign(sessao, { idToken: j.id_token, refreshToken: j.refresh_token, expira: Date.now() + Number(j.expires_in) * 1000 });
+      gravarSessao();
+      return sessao.idToken;
+    } catch (e) {
+      if (/^(TOKEN_EXPIRED|USER_DISABLED|USER_NOT_FOUND|INVALID_REFRESH_TOKEN)$/.test(e.codigo)) {
+        sair("Sua sessão expirou. Entre de novo para sincronizar.");
+      }
+      throw e;
+    }
+  }
+  const urlMeses = async () => `${FIREBASE.databaseURL.replace(/\/+$/, "")}/usuarios/${sessao.uid}/meses.json?auth=${encodeURIComponent(await token())}`;
+
+  async function enviarMeses(meses) {
+    if (!sessao || !Object.keys(meses).length) return;
+    try {
+      await chamar(await urlMeses(), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(meses) });
+      setSync("ok");
+    } catch (e) {
+      setSync(e.offline ? "offline" : "erro");
+    }
+  }
+
+  // preferirNuvem: ao entrar num aparelho, os meses que já estão na nuvem substituem os deste aparelho.
+  function sincronizar(msgOk, preferirNuvem) {
+    if (!sessao || !syncAtivo()) return Promise.resolve();
+    if (sincronizando) return sincronizando;
+    sincronizando = (async () => {
+      setSync("sincronizando");
+      try {
+        await salvarPendente();
+        const remoto = (await chamar(await urlMeses())) || {};
+        const enviar = {};
+        let mudouAberto = false;
+        for (const [m, d] of Object.entries(remoto)) {
+          if (!RE_MES.test(m) || !d || typeof d !== "object") continue;
+          const loc = cache[m];
+          const tr = Number(d.atualizado) || 0;
+          const tl = loc ? loc.atualizado || 0 : -1;
+          const novo = normalizar(d);
+          // Mais novo na nuvem (ou meses antigos sem hora, que ficam com a versão da nuvem).
+          if (tr > tl || ((preferirNuvem || (tr === 0 && tl === 0)) && JSON.stringify(novo) !== JSON.stringify(loc))) {
+            cache[m] = novo;
+            try { await local.salvar(m, novo); } catch { /* fica só na memória */ }
+            if (m === mes) mudouAberto = true;
+          } else if (tl > tr) {
+            enviar[m] = cache[m];
+          }
+        }
+        for (const m of Object.keys(cache)) if (!(m in remoto)) enviar[m] = cache[m];
+        if (Object.keys(enviar).length) {
+          await chamar(await urlMeses(), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(enviar) });
+        }
+        if (mudouAberto || (dados.exemplo && cache[mes])) {
+          dados = cache[mes];
+          const digitando = document.activeElement && /^(renda|g-valor)/.test(document.activeElement.id);
+          if (!digitando) preencherRendas();
+          renderTudo();
+        } else {
+          renderMeses();
+          renderGuardar();
+        }
+        setSync("ok", msgOk);
+      } catch (e) {
+        if (e.offline) setSync("offline", "Sem internet agora. Suas mudanças ficam salvas aqui e vão quando a conexão voltar.");
+        else if (sessao) setSync("erro", e.codigo === "Permission" || e.codigo === "HTTP_401"
+          ? "O Firebase recusou o acesso. Confira as regras do Realtime Database."
+          : `Não foi possível sincronizar (${e.codigo}).`);
+      } finally {
+        sincronizando = null;
+      }
+    })();
+    return sincronizando;
+  }
+
+  function renderSync() {
+    $("sync").hidden = !syncPossivel();
+    $("sync-config").hidden = syncConfigurado();
+    $("sync-config-trocar").hidden = !!FIREBASE_FIXO.apiKey;
+    $("sync-fora").hidden = !syncConfigurado() || !!sessao;
+    $("sync-dentro").hidden = !sessao;
+    if (sessao) $("sync-quem").textContent = sessao.email;
+  }
+  function sair(msg) {
+    sessao = null;
+    gravarSessao();
+    sync = { estado: "", hora: 0 };
+    renderSync();
+    $("sync-msg").textContent = msg || "Você saiu. Os dados continuam salvos neste aparelho.";
+    setStatus("ok");
+  }
+  async function entrar(criar) {
+    const email = $("sync-email").value.trim();
+    const senha = $("sync-senha").value;
+    if (!email || !senha) { $("sync-msg").textContent = "Digite o e-mail e a senha."; return; }
+    $("sync-msg").textContent = criar ? "Criando conta…" : "Entrando…";
+    try {
+      const j = await postarJSON(`${AUTH_URL}/accounts:${criar ? "signUp" : "signInWithPassword"}?key=${FIREBASE.apiKey}`,
+        { email, password: senha, returnSecureToken: true });
+      sessao = { email: j.email || email, uid: j.localId, idToken: j.idToken, refreshToken: j.refreshToken, expira: Date.now() + Number(j.expiresIn) * 1000 };
+      gravarSessao();
+      $("sync-senha").value = "";
+      renderSync();
+      await sincronizar(criar
+        ? "Conta criada com os dados deste aparelho. No outro aparelho, use Entrar com o mesmo e-mail e senha."
+        : "Pronto. Este aparelho recebeu os dados da sua conta e está sincronizado.", !criar);
+    } catch (e) {
+      $("sync-msg").textContent = e.offline ? "Sem internet. Conecte-se para entrar." : ERROS_LOGIN[e.codigo] || `Não foi possível entrar (${e.codigo}).`;
+    }
+  }
+  // Lê apiKey e databaseURL do código firebaseConfig colado (aceita o trecho em JavaScript ou JSON).
+  function lerConfig(texto) {
+    const pegar = (nome) => {
+      const m = texto.match(new RegExp(`["']?${nome}["']?\\s*[:=]\\s*["'\`]([^"'\`]+)["'\`]`));
+      return m ? m[1].trim() : "";
+    };
+    return { apiKey: pegar("apiKey"), databaseURL: pegar("databaseURL").replace(/\/+$/, "") };
+  }
+  $("sync-config-salvar").addEventListener("click", () => {
+    const cfg = lerConfig($("sync-config-texto").value);
+    if (!/^AIza[\w-]{20,}$/.test(cfg.apiKey)) {
+      $("sync-msg").textContent = "Não achei o apiKey (começa com AIza). Cole o código firebaseConfig inteiro.";
+      return;
+    }
+    if (!/^https:\/\/[\w.-]+\.(firebaseio\.com|firebasedatabase\.app)$/.test(cfg.databaseURL)) {
+      $("sync-msg").textContent = "Não achei o databaseURL. Crie o Realtime Database antes e copie o código de novo, ou acrescente a linha databaseURL com o endereço que aparece no topo da página do banco.";
+      return;
+    }
+    FIREBASE = cfg;
+    try { localStorage.setItem(CHAVE_FIREBASE, JSON.stringify(cfg)); } catch { /* vale só nesta tela */ }
+    $("sync-config-texto").value = "";
+    $("sync-msg").textContent = "Sincronização ligada. Agora crie a conta (no primeiro aparelho) ou entre (no segundo).";
+    renderSync();
+  });
+  $("sync-config-trocar").addEventListener("click", () => {
+    FIREBASE = { apiKey: "", databaseURL: "" };
+    try { localStorage.removeItem(CHAVE_FIREBASE); } catch { /* nada a apagar */ }
+    $("sync-msg").textContent = "";
+    renderSync();
+  });
+
+  $("sync-entrar").addEventListener("click", () => entrar(false));
+  $("sync-criar").addEventListener("click", () => entrar(true));
+  $("sync-senha").addEventListener("keydown", (e) => { if (e.key === "Enter") entrar(false); });
+  $("sync-agora").addEventListener("click", () => sincronizar("Sincronizado agora."));
+  $("sync-sair").addEventListener("click", () => sair());
+  $("sync-esqueci").addEventListener("click", async () => {
+    const email = $("sync-email").value.trim();
+    if (!email) { $("sync-msg").textContent = "Digite seu e-mail acima e toque de novo em Esqueci a senha."; return; }
+    try {
+      await postarJSON(`${AUTH_URL}/accounts:sendOobCode?key=${FIREBASE.apiKey}`, { requestType: "PASSWORD_RESET", email });
+      $("sync-msg").textContent = `Mandamos um e-mail para ${email} com o link para criar uma senha nova.`;
+    } catch (e) {
+      $("sync-msg").textContent = e.offline ? "Sem internet agora." : ERROS_LOGIN[e.codigo] || `Não foi possível enviar o e-mail (${e.codigo}).`;
+    }
+  });
+
+  // Puxa as mudanças ao voltar para o app e a cada 30 segundos com ele aberto.
+  window.addEventListener("focus", () => sincronizar());
+  window.addEventListener("online", () => sincronizar());
+  setInterval(() => { if (document.visibilityState === "visible") sincronizar(); }, 30000);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") sincronizar();
+  });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") salvarPendente(); });
+  window.addEventListener("pagehide", () => salvarPendente());
+  // O app Android chama isto ao sair da tela, para gravar na hora.
+  window.caixaSalvarAgora = salvarPendente;
+
+  // ---------- início ----------
+  async function iniciar() {
+    $("mes-rotulo").textContent = nomeMes(mes);
+    setStatus("carregando");
+    const conta = await conectarConta();
+    let brutos = null;
+    if (conta) {
+      try { brutos = await conta.todos(); store = conta; } catch { brutos = null; }
+    }
+    if (!brutos) { store = local; brutos = await local.todos(); }
+    cache = {};
+    for (const [m, d] of Object.entries(brutos)) cache[m] = normalizar(d);
+    abrirMes(mes);
+    renderSync();
+    setStatus("ok");
+    sincronizar();
+  }
+  iniciar();
+})();
+</script>
+<!-- app:end -->
+</body>
+</html>

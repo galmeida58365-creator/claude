@@ -1,0 +1,8 @@
+{
+  "name": "caixa-do-mes",
+  "productName": "Caixa do Mês",
+  "version": "1.5.0",
+  "description": "Organizador de finanças mensal",
+  "main": "main.js",
+  "private": true
+}
