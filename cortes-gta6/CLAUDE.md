@@ -1,6 +1,6 @@
 # Cortes GTA 6: instruções para o Claude
 
-Esta pasta gera cortes verticais (YouTube Shorts / TikTok) de youtubers com GTA 6: reações aos trailers (modo `trailer`) e, a partir do lançamento em 19/11/2026, momentos engraçados de gameplay (modo `gameplay`). `"modo": "auto"` troca sozinho pela `data_lancamento`; `--modo` força um modo. Conta: "Vice Cortes" (@vicecortes). O dono fala português; responda em português, de forma simples.
+Esta pasta gera cortes verticais (YouTube Shorts / TikTok) de youtubers com GTA 6: reações aos trailers (modo `trailer`) e, a partir do lançamento em 19/11/2026, momentos engraçados de gameplay (modo `gameplay`). `"modo": "auto"` troca sozinho pela `data_lancamento`; `--modo` força um modo. Conta: "Vice Cortes" (@vicereage no YouTube). O dono fala português; responda em português, de forma simples.
 
 ## Rodar
 

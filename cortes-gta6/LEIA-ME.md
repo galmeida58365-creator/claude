@@ -23,7 +23,7 @@ No modo gameplay os vídeos são lives longas (até 12 h). Para não baixar giga
 
 ## Nome da conta (YouTube e TikTok)
 
-**Vice Cortes**, arroba **@vicecortes**
+**Vice Cortes**, arroba **@vicereage** (YouTube)
 
 - Lembra Vice City, a cidade de GTA 6, sem usar a marca "GTA" no nome (a Rockstar não tem como reclamar e ninguém confunde com um canal oficial).
 - Depois do lançamento, o canal continua fazendo sentido com cortes de gameplay.
