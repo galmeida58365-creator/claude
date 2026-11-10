@@ -13,6 +13,7 @@ venv\Scripts\python cortes.py link URL [URL ...]   # corta vídeos específicos
 venv\Scripts\python cortes.py arquivo X.mp4 --canal "Nome" [--url URL]
 venv\Scripts\python cortes.py buscar               # só mostra o que encontraria
 venv\Scripts\python cortes.py painel               # refaz cortes/PAINEL.html
+venv\Scripts\python cortes.py limpar [--dias N]     # apaga cortes antigos (0 = todos)
 ```
 
 Sem venv: `python cortes.py ...` (precisa de `pip install -r requisitos.txt` e do ffmpeg no PATH).
@@ -21,6 +22,7 @@ Sem venv: `python cortes.py ...` (precisa de `pip install -r requisitos.txt` e d
 
 - `config.json`: ajustes gerais em cima; buscas, tamanho do corte, textos e hashtags de cada modo em `modos.trailer` / `modos.gameplay`. Mude aqui em vez de mudar o código.
 - Vídeos acima de `baixar_so_trechos_acima_de_min` (lives): baixa só o áudio, acha os momentos e baixa só os trechos.
+- O dono tem pouco espaço em disco: cortes são apagados `apagar_cortes_depois_de_dias` depois de criados (a cada rodada) e downloads logo após cortar. Não desligue isso sem ele pedir.
 - `estado.json`: vídeos já processados e cortes gerados (evita repetir). Não apague sem pedir.
 - Saída: `cortes/AAAA-MM-DD/<canal>_<id>_<n>/corte.mp4` + `titulo.txt`, `descricao_youtube.txt`, `legenda_tiktok.txt`; painel em `cortes/PAINEL.html`.
 - Momentos: "mais repetidos" do YouTube (`heatmap` do yt-dlp) + picos de volume; legendas com faster-whisper.

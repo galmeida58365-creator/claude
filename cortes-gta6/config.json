@@ -23,6 +23,7 @@
   "idioma": "",
   "qualidade_maxima": 1080,
   "apagar_videos_baixados": true,
+  "apagar_cortes_depois_de_dias": 7,
   "cookies_do_navegador": "",
   "horarios_sugeridos": [
     "12:00",

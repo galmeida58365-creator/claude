@@ -615,6 +615,41 @@ def agenda(n, cfg):
     return slots[:n]
 
 
+def tamanho_mb(pasta):
+    if not pasta.exists():
+        return 0.0
+    return sum(f.stat().st_size for f in pasta.rglob("*") if f.is_file()) / 1e6
+
+
+def limpar(cfg, estado, dias=None):
+    """Apaga cortes com mais de N dias (já deu tempo de postar) e sobras de downloads."""
+    dias = int(cfg.get("apagar_cortes_depois_de_dias", 7) if dias is None else dias)
+    antes = tamanho_mb(SAIDA) + tamanho_mb(BAIXADOS)
+    if dias >= 0:
+        limite = dt.date.today() - dt.timedelta(days=dias)
+        apagados = 0
+        for c in estado["cortes"]:
+            if c.get("apagado"):
+                continue
+            if dt.date.fromisoformat(c["criado"]) <= limite:
+                pasta = (SAIDA / c["arquivo"]).parent
+                if pasta.exists():
+                    shutil.rmtree(pasta, ignore_errors=True)
+                c["apagado"] = True
+                apagados += 1
+        for d in SAIDA.glob("*"):
+            if d.is_dir() and not any(d.iterdir()):
+                d.rmdir()
+        if apagados:
+            log(f"Limpeza: {apagados} corte(s) com mais de {dias} dia(s) apagados")
+    if BAIXADOS.exists():
+        shutil.rmtree(BAIXADOS, ignore_errors=True)
+    liberado = antes - tamanho_mb(SAIDA) - tamanho_mb(BAIXADOS)
+    if liberado > 1:
+        log(f"Espaço liberado: {liberado:.0f} MB")
+    salvar_estado(estado)
+
+
 def gerar_painel(cfg, estado):
     SAIDA.mkdir(parents=True, exist_ok=True)
     cortes = [c for c in estado["cortes"] if (SAIDA / c["arquivo"]).exists()]
@@ -629,6 +664,14 @@ def gerar_painel(cfg, estado):
                 ordem.append(por_canal[k].pop(0))
     slots = agenda(len(ordem), cfg)
 
+    dias = int(cfg.get("apagar_cortes_depois_de_dias", 7))
+
+    def apaga_em(c):
+        if dias < 0:
+            return ""
+        d = dt.date.fromisoformat(c["criado"]) + dt.timedelta(days=dias)
+        return f"Apagado do PC em {d.strftime('%d/%m')}: envie e programe no YouTube/TikTok antes disso."
+
     cards = []
     for i, (c, slot) in enumerate(zip(ordem, slots)):
         e = html.escape
@@ -638,6 +681,7 @@ def gerar_painel(cfg, estado):
   <video src="{e(c['arquivo'])}" controls preload="metadata"></video>
   <div class="info">
     <div class="topo"><b>#{i + 1} · {e(c['canal'])} <span class="tag">{e(c.get('modo', 'trailer'))}</span></b><span class="slot">Sugestão: {e(slot)}</span></div>
+    <div class="apaga">{e(apaga_em(c))}</div>
     <label>Título (YouTube)</label>
     <div class="campo"><textarea rows="2" readonly>{e(c['titulo'])}</textarea><button>Copiar</button></div>
     <label>Descrição (YouTube)</label>
@@ -665,6 +709,7 @@ main{{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}}
 .card{{display:grid;grid-template-columns:270px 1fr;gap:16px;background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:12px}}
 .card.feito{{opacity:.45}}video{{width:100%;aspect-ratio:9/16;background:#000;border-radius:8px}}
 .topo{{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}}.slot{{color:var(--acento);font-weight:600}}
+.apaga{{color:var(--sub);font-size:13px}}
 .tag{{font-size:12px;font-weight:600;color:var(--sub);border:1px solid var(--borda);border-radius:99px;padding:1px 8px;margin-left:6px}}
 label{{display:block;color:var(--sub);font-size:13px;margin-top:8px}}
 .campo{{display:flex;gap:6px}}textarea{{flex:1;background:#0c0e12;color:var(--txt);border:1px solid var(--borda);border-radius:6px;padding:6px;font:inherit;resize:vertical}}
@@ -674,7 +719,7 @@ a{{color:var(--acento)}}
 @media(max-width:700px){{.card{{grid-template-columns:1fr}}video{{max-height:70vh}}}}
 </style></head><body>
 <header><h1>{html.escape(cfg['nome_da_conta'])} <span>· cortes prontos</span></h1>
-<p>{len(ordem)} cortes. Poste no YouTube Studio (Criar → Enviar vídeos) e no TikTok (tiktok.com/upload). Marque o que já postou.</p></header>
+<p>{len(ordem)} cortes ({tamanho_mb(SAIDA):.0f} MB no PC). Poste no YouTube Studio (Criar → Enviar vídeos) e no TikTok (tiktok.com/upload). Marque o que já postou.</p></header>
 <main>{''.join(cards) or '<p>Nenhum corte ainda. Rode o rodar.bat.</p>'}</main>
 <script>
 const chave = id => 'corte:' + id;
@@ -708,6 +753,8 @@ def main():
     sub.add_parser("tudo")
     sub.add_parser("buscar")
     sub.add_parser("painel")
+    p = sub.add_parser("limpar")
+    p.add_argument("--dias", type=int, help="apaga cortes com mais de N dias (0 = todos)")
     p = sub.add_parser("link")
     p.add_argument("urls", nargs="+")
     p = sub.add_parser("arquivo")
@@ -724,6 +771,11 @@ def main():
         gerar_painel(cfg, estado)
         return
 
+    if a.cmd == "limpar":
+        limpar(cfg, estado, a.dias)
+        gerar_painel(cfg, estado)
+        return
+
     if a.cmd == "buscar":
         for e in buscar(cfg, estado):
             log(f"- {e.get('channel') or e.get('uploader')}: {e.get('title')} "
@@ -731,6 +783,7 @@ def main():
         return
 
     exigir_ffmpeg()
+    limpar(cfg, estado)
     if a.cmd == "arquivo":
         processar_video(Path(a.caminho), None, a.canal, a.url, "", cfg, estado)
     elif a.cmd == "link":

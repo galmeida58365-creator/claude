@@ -48,9 +48,28 @@ Se trocar, mude `nome_da_conta` e `arroba` no `config.json`.
 | Cortar um vídeo específico (ex.: a reação de um youtuber grande) | `cortar-link.bat` e cole o link |
 | Rodar sozinho todo dia às 10h | `agendar-diario.bat` (uma vez) |
 | Parar o agendamento | `desagendar.bat` |
+| Liberar espaço agora | `limpar.bat` |
 | Ver os cortes | `cortes/PAINEL.html` |
 
 O programa lembra quais vídeos já cortou e não repete.
+
+## Espaço no PC
+
+O programa ocupa pouco e se limpa sozinho:
+
+| O quê | Tamanho | O que acontece |
+|---|---|---|
+| Programa + yt-dlp + bibliotecas (pasta `venv`) | ~1,5 GB | Fica, uma vez só |
+| Modelo da legenda | ~500 MB | Fica, baixa na 1ª vez |
+| Vídeo baixado do YouTube | até alguns GB | **Apagado** logo depois de cortar |
+| Cada corte pronto | ~20 MB | **Apagado 7 dias** depois de criado |
+
+- O painel mostra em cada corte **a data em que ele vai ser apagado**. Antes disso, envie o vídeo e programe no YouTube e no TikTok: depois de enviado, ele fica guardado lá e não precisa mais estar no PC.
+- Para mudar o prazo, altere `apagar_cortes_depois_de_dias` no `config.json` (`-1` = nunca apagar).
+- Para apagar na hora, use o `limpar.bat` (com `0` apaga todos os cortes).
+- Compactar não adianta: o vídeo já sai comprimido, e zipar quase não diminui.
+
+**yt-dlp:** você não precisa instalar separado. O `instalar.bat` coloca o yt-dlp dentro da pasta do programa e o `rodar.bat` atualiza ele sozinho toda vez.
 
 ## Como postar
 
@@ -79,6 +98,7 @@ Abra com o Bloco de Notas.
 | `modo` / `data_lancamento` | `auto` troca de trailer para gameplay na data |
 | `canais_permitidos` | Youtubers que ele corta (com `somente_canais_permitidos: true`) |
 | `qualidade_maxima` | 1080 ou 720 (720 baixa mais rápido) |
+| `apagar_cortes_depois_de_dias` | Apaga os cortes do PC depois de N dias (padrão 7; `-1` = nunca) |
 
 Dentro de `"modos"` cada modo (`trailer` e `gameplay`) tem os próprios ajustes:
 
