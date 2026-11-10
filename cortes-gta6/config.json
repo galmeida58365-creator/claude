@@ -1,20 +1,11 @@
 {
   "nome_da_conta": "Vice Cortes",
   "arroba": "@vicecortes",
-  "buscas": [
-    "alanzoka trailer gta 6",
-    "brksedu trailer gta 6",
-    "davy jones trailer gta 6",
-    "reagindo ao trailer de gta 6",
-    "react trailer gta 6",
-    "gta 6 trailer reação",
-    "reagindo trailer gta vi",
-    "gta 6 trailer reaction"
-  ],
+  "modo": "auto",
+  "data_lancamento": "2026-11-19",
   "resultados_por_busca": 25,
   "videos_por_rodada": 4,
   "duracao_minima_video_min": 4,
-  "duracao_maxima_video_min": 240,
   "visualizacoes_minimas": 5000,
   "somente_canais_permitidos": true,
   "canais_permitidos": [
@@ -25,14 +16,7 @@
   "canais_bloqueados": [
     "Rockstar Games"
   ],
-  "cortes_por_video": 3,
-  "segundos_antes_do_pico": 12,
-  "segundos_depois_do_pico": 28,
-  "pular_inicio_seg": 20,
-  "pular_fim_seg": 25,
   "zoom_do_video": 1.25,
-  "titulo_linha1": "{canal} REAGINDO",
-  "titulo_linha2": "AO TRAILER DE GTA 6",
   "fonte": "Arial",
   "legendas": true,
   "modelo_whisper": "small",
@@ -45,13 +29,63 @@
     "18:00",
     "21:00"
   ],
-  "titulos": [
-    "A REAÇÃO de {canal} ao trailer de GTA 6 🔥 #gta6",
-    "{canal} NÃO ACREDITOU no trailer de GTA 6 🤯 #gta6",
-    "Olha a reação de {canal} ao trailer de GTA 6 👀 #gta6",
-    "{canal} surtou com esse momento do trailer de GTA 6 😱 #gta6",
-    "{canal} vendo o trailer de GTA 6 pela primeira vez #gta6"
-  ],
-  "hashtags_youtube": "#gta6 #gtavi #gta6trailer #reacao #shorts",
-  "hashtags_tiktok": "#gta6 #gtavi #gta6trailer #reacao #fyp #paravoce #gta"
+  "baixar_so_trechos_acima_de_min": 25,
+  "modos": {
+    "trailer": {
+      "buscas": [
+        "alanzoka trailer gta 6",
+        "brksedu trailer gta 6",
+        "davy jones trailer gta 6",
+        "reagindo ao trailer de gta 6",
+        "react trailer gta 6",
+        "gta 6 trailer reação",
+        "reagindo trailer gta vi",
+        "gta 6 trailer reaction"
+      ],
+      "duracao_maxima_video_min": 240,
+      "cortes_por_video": 3,
+      "segundos_antes_do_pico": 12,
+      "segundos_depois_do_pico": 28,
+      "pular_inicio_seg": 20,
+      "pular_fim_seg": 25,
+      "titulo_linha1": "{canal} REAGINDO",
+      "titulo_linha2": "AO TRAILER DE GTA 6",
+      "titulos": [
+        "A REAÇÃO de {canal} ao trailer de GTA 6 🔥 #gta6",
+        "{canal} NÃO ACREDITOU no trailer de GTA 6 🤯 #gta6",
+        "Olha a reação de {canal} ao trailer de GTA 6 👀 #gta6",
+        "{canal} surtou com esse momento do trailer de GTA 6 😱 #gta6",
+        "{canal} vendo o trailer de GTA 6 pela primeira vez #gta6"
+      ],
+      "hashtags_youtube": "#gta6 #gtavi #gta6trailer #reacao #shorts",
+      "hashtags_tiktok": "#gta6 #gtavi #gta6trailer #reacao #fyp #paravoce #gta"
+    },
+    "gameplay": {
+      "buscas": [
+        "alanzoka gta 6",
+        "brksedu gta 6",
+        "davy jones gta 6",
+        "jogando gta 6",
+        "gta 6 gameplay live",
+        "gta 6 momentos engraçados"
+      ],
+      "duracao_maxima_video_min": 720,
+      "cortes_por_video": 5,
+      "segundos_antes_do_pico": 15,
+      "segundos_depois_do_pico": 30,
+      "pular_inicio_seg": 300,
+      "pular_fim_seg": 120,
+      "titulo_linha1": "{canal} JOGANDO",
+      "titulo_linha2": "GTA 6",
+      "titulos": [
+        "{canal} no GTA 6 é muito engraçado 😂 #gta6",
+        "{canal} não aguentou esse momento no GTA 6 🤣 #gta6",
+        "Isso só acontece com o {canal} no GTA 6 💀 #gta6",
+        "{canal} jogando GTA 6 foi demais 😂 #gta6",
+        "{canal} perdeu a paciência no GTA 6 😂 #gta6"
+      ],
+      "hashtags_youtube": "#gta6 #gtavi #gta6gameplay #engraçado #shorts",
+      "hashtags_tiktok": "#gta6 #gtavi #gta6gameplay #engraçado #fyp #paravoce #gta"
+    }
+  }
 }

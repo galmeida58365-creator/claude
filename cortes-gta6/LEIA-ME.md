@@ -1,13 +1,25 @@
-# Cortes GTA 6: reações aos trailers
+# Cortes GTA 6: reações e gameplay
 
 Programa que roda no seu PC (Windows) e faz tudo sozinho:
 
-1. **Procura** no YouTube vídeos de youtubers reagindo aos trailers de GTA 6.
+1. **Procura** no YouTube vídeos de youtubers reagindo aos trailers de GTA 6 (ou jogando, depois do lançamento).
 2. **Acha os melhores momentos** de cada reação usando:
    - o gráfico de "mais repetidos" do YouTube (as partes que o público mais voltou para ver);
    - os picos de volume (quando o youtuber grita ou surta).
 3. **Corta** cada momento (~40 s) no formato vertical 1080x1920, com fundo desfocado, título em cima ("FULANO REAGINDO / AO TRAILER DE GTA 6"), **legenda automática** palavra por palavra e crédito ao criador embaixo.
 4. **Monta um painel** (`cortes/PAINEL.html`) com cada vídeo, título, descrição do YouTube, legenda do TikTok com botão de copiar, sugestão de dia e horário para postar e caixinhas de "já postei".
+
+## Dois modos (troca sozinho no lançamento)
+
+| Quando | Modo | O que corta |
+|---|---|---|
+| Até 18/11/2026 | **trailer** | Youtubers reagindo aos trailers |
+| A partir de 19/11/2026 (lançamento) | **gameplay** | Youtubers jogando: risadas, gritos, surtos, os momentos mais repetidos |
+
+Você não precisa fazer nada: o `rodar.bat` vê a data e escolhe o modo. Se o lançamento mudar, altere `data_lancamento` no `config.json`. Para forçar um modo, troque `"modo": "auto"` por `"trailer"` ou `"gameplay"`.
+
+No modo gameplay os vídeos são lives longas (até 12 h). Para não baixar gigas, o programa baixa **só o áudio**, acha os momentos e depois baixa **só os trechos** que viram corte.
+
 
 ## Nome da conta (YouTube e TikTok)
 
@@ -21,12 +33,12 @@ Se trocar, mude `nome_da_conta` e `arroba` no `config.json`.
 
 ## Primeira vez (uns 15 minutos)
 
-1. Baixe o projeto: em **github.com/galmeida58365-creator/claude**, troque o branch para `ccr-df95a07f-nh1hoa` (ou `main`, depois que juntar), clique em **Code > Download ZIP** e extraia.
-2. Abra a pasta **`cortes-gta6`**.
-3. Dois cliques em **`instalar.bat`**. Ele instala Python, ffmpeg e Deno e as bibliotecas.
+1. Baixe o **`cortes-gta6.zip`** que o Claude mandou na conversa, clique com o botão direito > **Extrair tudo** e abra a pasta **`cortes-gta6`**.
+   (Ou pelo GitHub: branch `ccr-df95a07f-nh1hoa` > **Code > Download ZIP**.)
+2. Dois cliques em **`instalar.bat`**. Ele instala Python, ffmpeg e Deno e as bibliotecas.
    Se ele pedir, feche a janela e rode o `instalar.bat` de novo.
-4. Dois cliques em **`rodar.bat`**. Na primeira vez demora mais, porque baixa o modelo de legenda (~500 MB).
-5. Quando terminar, o **painel** abre sozinho no navegador.
+3. Dois cliques em **`rodar.bat`**. Na primeira vez demora mais, porque baixa o modelo de legenda (~500 MB).
+4. Quando terminar, o **painel** abre sozinho no navegador.
 
 ## Uso no dia a dia
 
@@ -64,14 +76,28 @@ Abra com o Bloco de Notas.
 
 | Campo | O que faz |
 |---|---|
+| `modo` / `data_lancamento` | `auto` troca de trailer para gameplay na data |
+| `canais_permitidos` | Youtubers que ele corta (com `somente_canais_permitidos: true`) |
+| `qualidade_maxima` | 1080 ou 720 (720 baixa mais rápido) |
+
+Dentro de `"modos"` cada modo (`trailer` e `gameplay`) tem os próprios ajustes:
+
+| Campo | O que faz |
+|---|---|
 | `buscas` | O que o programa pesquisa no YouTube |
-| `videos_por_rodada` | Quantos vídeos novos ele corta por vez |
 | `cortes_por_video` | Quantos cortes tira de cada vídeo |
-| `segundos_antes_do_pico` / `segundos_depois_do_pico` | Tamanho do corte (padrão 12 + 28 = 40 s) |
-| `zoom_do_video` | 1.0 = vídeo inteiro; 1.25 = maior, cortando as laterais |
+| `segundos_antes_do_pico` / `segundos_depois_do_pico` | Tamanho do corte (trailer 40 s, gameplay 45 s) |
+| `pular_inicio_seg` | Ignora o começo (no gameplay, 5 min de "boa noite chat") |
 | `titulo_linha1` / `titulo_linha2` | Texto em cima do vídeo (`{canal}` vira o nome do youtuber) |
-| `legendas` / `modelo_whisper` | Liga a legenda automática; `small` é bom, `base` é mais rápido, `medium` é mais preciso |
 | `titulos`, `hashtags_youtube`, `hashtags_tiktok` | Textos das postagens |
+
+Ajustes gerais (fora de `"modos"`):
+
+| Campo | O que faz |
+|---|---|
+| `videos_por_rodada` | Quantos vídeos novos ele corta por vez |
+| `zoom_do_video` | 1.0 = vídeo inteiro; 1.25 = maior, cortando as laterais |
+| `legendas` / `modelo_whisper` | Liga a legenda automática; `small` é bom, `base` é mais rápido, `medium` é mais preciso |
 | `cookies_do_navegador` | Se o YouTube bloquear ("confirme que não é um robô"), coloque `"firefox"` |
 
 ## Problemas comuns

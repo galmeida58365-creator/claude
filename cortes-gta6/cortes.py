@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Cortes GTA 6: acha vídeos de youtubers reagindo aos trailers de GTA 6,
-encontra os melhores momentos e gera cortes verticais (9:16) prontos para
-YouTube Shorts e TikTok, com título, legenda e crédito ao criador.
+"""Cortes GTA 6: acha vídeos de youtubers com GTA 6, encontra os melhores
+momentos e gera cortes verticais (9:16) prontos para YouTube Shorts e TikTok,
+com título, legenda e crédito ao criador.
+
+Modos (campo "modo" no config.json, ou --modo):
+  trailer   reações aos trailers
+  gameplay  youtubers jogando, momentos engraçados
+  auto      trailer até a data de lançamento, gameplay depois
 
 Uso:
   python cortes.py tudo              busca vídeos novos, corta e monta o painel
@@ -9,6 +14,7 @@ Uso:
   python cortes.py arquivo CAMINHO --canal "Nome"   corta um vídeo que já está no PC
   python cortes.py buscar            só lista o que acharia (não baixa nada)
   python cortes.py painel            refaz o painel de postagem
+  python cortes.py --modo gameplay tudo   força um modo
 """
 
 import argparse
@@ -42,9 +48,18 @@ def log(msg):
     print(msg, flush=True)
 
 
-def carregar_config():
+def carregar_config(modo=None):
     with open(CONFIG, encoding="utf-8") as f:
-        return json.load(f)
+        cfg = json.load(f)
+    m = (modo or cfg.get("modo") or "auto").lower()
+    if m == "auto":
+        lanc = dt.date.fromisoformat(cfg.get("data_lancamento", "2026-11-19"))
+        m = "gameplay" if dt.date.today() >= lanc else "trailer"
+    if m not in cfg.get("modos", {}):
+        sys.exit(f"ERRO: modo '{m}' não existe no config.json (use trailer ou gameplay)")
+    cfg.update(cfg["modos"][m])
+    cfg["modo_ativo"] = m
+    return cfg
 
 
 def carregar_estado():
@@ -112,9 +127,20 @@ def parece_reacao(titulo):
     return fala_de_gta6(titulo) and any(p in titulo.lower() for p in PALAVRAS_REACAO)
 
 
+PALAVRAS_GAMEPLAY = ("gameplay", "jogando", "zerando", "playthrough", "parte", " ep", "live",
+                     "engraçad", "momentos", "historia", "história", "campanha", "online")
+
+
 def video_serve(titulo, canal, cfg):
-    """Reação ao trailer. Para os canais da lista de permitidos basta falar de GTA 6 + trailer,
-    porque streamer nem sempre escreve "reagindo" no título."""
+    """O vídeo combina com o modo atual?
+    Para os canais da lista de permitidos o filtro é mais solto, porque streamer
+    nem sempre escreve "reagindo" ou "gameplay" no título."""
+    t = titulo.lower()
+    favorito = na_lista(canal, cfg.get("canais_permitidos"))
+    if cfg.get("modo_ativo") == "gameplay":
+        if not fala_de_gta6(titulo) or "trailer" in t or "reag" in t or "react" in t:
+            return False
+        return favorito or any(p in f" {t}" for p in PALAVRAS_GAMEPLAY)
     if parece_reacao(titulo):
         return True
     return (na_lista(canal, cfg.get("canais_permitidos")) and fala_de_gta6(titulo)
@@ -184,26 +210,54 @@ def buscar(cfg, estado):
     return escolhidos
 
 
-def baixar(url, cfg):
+def _baixar(url, cfg, extra, nome):
     import yt_dlp
 
     BAIXADOS.mkdir(parents=True, exist_ok=True)
-    q = int(cfg.get("qualidade_maxima", 1080))
     op = opcoes_ytdlp(cfg)
-    op.update({
-        "format": f"bv*[height<={q}][ext=mp4]+ba[ext=m4a]/bv*[height<={q}]+ba/b[height<={q}]/b",
-        "merge_output_format": "mp4",
-        "outtmpl": str(BAIXADOS / "%(id)s.%(ext)s"),
-    })
+    op["outtmpl"] = str(BAIXADOS / nome)
+    op.update(extra)
     with yt_dlp.YoutubeDL(op) as ydl:
         info = ydl.extract_info(url, download=True)
     caminho = None
     for d in info.get("requested_downloads") or []:
         if d.get("filepath"):
             caminho = d["filepath"]
-    if not caminho:
-        caminho = str(BAIXADOS / f"{info['id']}.mp4")
+    if not caminho or not Path(caminho).exists():
+        achados = sorted(BAIXADOS.glob(nome.replace("%(ext)s", "*").replace("%(id)s", info["id"])))
+        if not achados:
+            raise RuntimeError("o download terminou mas o arquivo não apareceu")
+        caminho = achados[-1]
     return Path(caminho), info
+
+
+def _formato_video(cfg):
+    q = int(cfg.get("qualidade_maxima", 1080))
+    return {
+        "format": f"bv*[height<={q}][ext=mp4]+ba[ext=m4a]/bv*[height<={q}]+ba/b[height<={q}]/b",
+        "merge_output_format": "mp4",
+    }
+
+
+def baixar(url, cfg):
+    """Vídeo inteiro."""
+    return _baixar(url, cfg, _formato_video(cfg), "%(id)s.%(ext)s")
+
+
+def baixar_audio(url, cfg):
+    """Só o áudio (bem mais leve), para achar os momentos de vídeos longos."""
+    return _baixar(url, cfg, {"format": "bestaudio/best"}, "%(id)s.audio.%(ext)s")
+
+
+def baixar_trecho(url, ini, fim, cfg):
+    """Só um pedaço do vídeo (ini..fim, em segundos)."""
+    from yt_dlp.utils import download_range_func
+
+    extra = _formato_video(cfg)
+    extra["download_ranges"] = download_range_func(None, [(ini, fim)])
+    extra["force_keyframes_at_cuts"] = True
+    caminho, _ = _baixar(url, cfg, extra, f"%(id)s.trecho{int(ini)}.%(ext)s")
+    return caminho
 
 
 # ---------------------------------------------------------------- melhores momentos
@@ -461,9 +515,11 @@ def textos_postagem(canal, url, canal_url, cfg, semente):
     return titulo, descricao, tiktok
 
 
-def processar_video(video, info, canal, url, canal_url, cfg, estado):
+def processar_video(video, info, canal, url, canal_url, cfg, estado, pegar_trecho=None):
+    """video: arquivo usado para achar os momentos (pode ser só o áudio, se houver pegar_trecho).
+    pegar_trecho(ini, fim) -> (arquivo_de_video, segundo_em_que_esse_arquivo_comeca)."""
     vid = (info or {}).get("id") or nome_arquivo(Path(video).stem)
-    log(f"\n▶ {canal}: {(info or {}).get('title') or Path(video).name}")
+    log(f"\n▶ [{cfg['modo_ativo']}] {canal}: {(info or {}).get('title') or Path(video).name}")
     momentos = achar_momentos(video, info, cfg)
     if not momentos:
         log("  nenhum momento bom encontrado")
@@ -473,7 +529,8 @@ def processar_video(video, info, canal, url, canal_url, cfg, estado):
         pasta = SAIDA / hoje / f"{nome_arquivo(canal, 25)}_{vid}_{i}"
         log(f"  corte {i}: {int(ini // 60)}:{int(ini % 60):02d} até {int(fim // 60)}:{int(fim % 60):02d}")
         try:
-            arq = renderizar(video, ini, fim, pasta, canal, cfg)
+            fonte, desloc = pegar_trecho(ini, fim) if pegar_trecho else (video, 0.0)
+            arq = renderizar(fonte, ini - desloc, fim - desloc, pasta, canal, cfg)
         except Exception as e:
             log(f"  ERRO no corte {i}: {e}")
             continue
@@ -487,6 +544,7 @@ def processar_video(video, info, canal, url, canal_url, cfg, estado):
             "canal": canal, "video_id": vid, "url": url_t or "",
             "inicio": ini, "fim": fim, "titulo": titulo,
             "descricao": descricao, "tiktok": tiktok, "criado": hoje,
+            "modo": cfg["modo_ativo"],
         }
         estado["cortes"].append(corte)
         feitos.append(corte)
@@ -497,19 +555,51 @@ def processar_video(video, info, canal, url, canal_url, cfg, estado):
 
 
 def processar_link(url, cfg, estado):
+    """Vídeos curtos: baixa inteiro. Vídeos longos (lives): baixa só o áudio,
+    acha os momentos e depois baixa só os trechos que viram corte."""
+    import yt_dlp
+
+    temporarios = []
     try:
-        video, info = baixar(url, cfg)
+        with yt_dlp.YoutubeDL(opcoes_ytdlp(cfg)) as ydl:
+            meta = ydl.extract_info(url, download=False)
+        dur = meta.get("duration") or 0
+        longo = dur > float(cfg.get("baixar_so_trechos_acima_de_min", 25)) * 60
+        if longo:
+            log(f"\nVídeo longo ({int(dur // 60)} min): baixando só o áudio primeiro...")
+            fonte, info = baixar_audio(url, cfg)
+        else:
+            fonte, info = baixar(url, cfg)
+        temporarios.append(fonte)
     except Exception as e:
         log(f"ERRO ao baixar {url}: {e}")
         return []
+
     canal = info.get("channel") or info.get("uploader") or "Youtuber"
     canal_url = info.get("channel_url") or info.get("uploader_url") or ""
     link = info.get("webpage_url") or url
+    inteiro = {}
+
+    def pegar_trecho(ini, fim):
+        a, b = max(0.0, ini - 1), fim + 1
+        try:
+            arq = baixar_trecho(link, a, b, cfg)
+            temporarios.append(arq)
+            return arq, a
+        except Exception as e:
+            log(f"  não deu para baixar só o trecho ({e}); baixando o vídeo inteiro")
+        if "arq" not in inteiro:
+            inteiro["arq"], _ = baixar(link, cfg)
+            temporarios.append(inteiro["arq"])
+        return inteiro["arq"], 0.0
+
     try:
-        return processar_video(video, info, canal, link, canal_url, cfg, estado)
+        return processar_video(fonte, info, canal, link, canal_url, cfg, estado,
+                               pegar_trecho if longo else None)
     finally:
         if cfg.get("apagar_videos_baixados", True):
-            Path(video).unlink(missing_ok=True)
+            for t in temporarios:
+                Path(t).unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------- painel de postagem
@@ -547,7 +637,7 @@ def gerar_painel(cfg, estado):
 <article class="card" data-id="{cid}">
   <video src="{e(c['arquivo'])}" controls preload="metadata"></video>
   <div class="info">
-    <div class="topo"><b>#{i + 1} · {e(c['canal'])}</b><span class="slot">Sugestão: {e(slot)}</span></div>
+    <div class="topo"><b>#{i + 1} · {e(c['canal'])} <span class="tag">{e(c.get('modo', 'trailer'))}</span></b><span class="slot">Sugestão: {e(slot)}</span></div>
     <label>Título (YouTube)</label>
     <div class="campo"><textarea rows="2" readonly>{e(c['titulo'])}</textarea><button>Copiar</button></div>
     <label>Descrição (YouTube)</label>
@@ -575,6 +665,7 @@ main{{max-width:1100px;margin:0 auto;padding:16px;display:grid;gap:16px}}
 .card{{display:grid;grid-template-columns:270px 1fr;gap:16px;background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:12px}}
 .card.feito{{opacity:.45}}video{{width:100%;aspect-ratio:9/16;background:#000;border-radius:8px}}
 .topo{{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}}.slot{{color:var(--acento);font-weight:600}}
+.tag{{font-size:12px;font-weight:600;color:var(--sub);border:1px solid var(--borda);border-radius:99px;padding:1px 8px;margin-left:6px}}
 label{{display:block;color:var(--sub);font-size:13px;margin-top:8px}}
 .campo{{display:flex;gap:6px}}textarea{{flex:1;background:#0c0e12;color:var(--txt);border:1px solid var(--borda);border-radius:6px;padding:6px;font:inherit;resize:vertical}}
 button{{background:var(--acento);color:#fff;border:0;border-radius:6px;padding:0 12px;font-weight:600;cursor:pointer}}button.ok{{background:var(--ok)}}
@@ -611,7 +702,8 @@ document.querySelectorAll('.card').forEach(card => {{
 # ---------------------------------------------------------------- comandos
 
 def main():
-    ap = argparse.ArgumentParser(description="Cortes de reações aos trailers de GTA 6")
+    ap = argparse.ArgumentParser(description="Cortes de youtubers com GTA 6 (trailer ou gameplay)")
+    ap.add_argument("--modo", choices=["auto", "trailer", "gameplay"], help="sobrepõe o modo do config.json")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("tudo")
     sub.add_parser("buscar")
@@ -624,7 +716,8 @@ def main():
     p.add_argument("--url", default="")
     a = ap.parse_args()
 
-    cfg = carregar_config()
+    cfg = carregar_config(a.modo)
+    log(f"Modo: {cfg['modo_ativo']}")
     estado = carregar_estado()
 
     if a.cmd == "painel":

@@ -1,6 +1,6 @@
 # Cortes GTA 6: instruções para o Claude
 
-Esta pasta gera cortes verticais (YouTube Shorts / TikTok) de youtubers reagindo aos trailers de GTA 6. Conta: "Vice Cortes" (@vicecortes). O dono fala português; responda em português, de forma simples.
+Esta pasta gera cortes verticais (YouTube Shorts / TikTok) de youtubers com GTA 6: reações aos trailers (modo `trailer`) e, a partir do lançamento em 19/11/2026, momentos engraçados de gameplay (modo `gameplay`). `"modo": "auto"` troca sozinho pela `data_lancamento`; `--modo` força um modo. Conta: "Vice Cortes" (@vicecortes). O dono fala português; responda em português, de forma simples.
 
 ## Rodar
 
@@ -19,7 +19,8 @@ Sem venv: `python cortes.py ...` (precisa de `pip install -r requisitos.txt` e d
 
 ## Como funciona
 
-- `config.json`: buscas, filtros, tamanho do corte, textos e hashtags. Mude aqui em vez de mudar o código.
+- `config.json`: ajustes gerais em cima; buscas, tamanho do corte, textos e hashtags de cada modo em `modos.trailer` / `modos.gameplay`. Mude aqui em vez de mudar o código.
+- Vídeos acima de `baixar_so_trechos_acima_de_min` (lives): baixa só o áudio, acha os momentos e baixa só os trechos.
 - `estado.json`: vídeos já processados e cortes gerados (evita repetir). Não apague sem pedir.
 - Saída: `cortes/AAAA-MM-DD/<canal>_<id>_<n>/corte.mp4` + `titulo.txt`, `descricao_youtube.txt`, `legenda_tiktok.txt`; painel em `cortes/PAINEL.html`.
 - Momentos: "mais repetidos" do YouTube (`heatmap` do yt-dlp) + picos de volume; legendas com faster-whisper.
