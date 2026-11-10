@@ -53,6 +53,7 @@ Ritmo bom para começar: **3 por dia** em cada rede (12h, 18h e 21h, já sugerid
 Os vídeos de reação são dos youtubers. Repostar sem permissão pode gerar **reivindicação (Content ID), strike** ou desmonetização por "conteúdo reutilizado". Três strikes derrubam o canal. Para reduzir o risco:
 
 - **Prefira quem libera cortes.** Muitos streamers e youtubers deixam qualquer um cortar e até pedem isso (vários têm "programa de cortes"). Peça por DM ou e-mail quando der. Depois coloque esses canais em `canais_permitidos` no `config.json` e mude `somente_canais_permitidos` para `true`: assim o programa só corta deles.
+- **Já vem configurado só com alanzoka, BRKsEDU e Davy Jones** (`somente_canais_permitidos: true`). Para incluir outro youtuber, adicione o nome do canal em `canais_permitidos` (maiúscula, espaço e acento não importam). Para cortar de qualquer canal, mude para `false`.
 - **Sempre dê crédito** (o programa já põe o nome na tela e o link na descrição).
 - **Se um youtuber pedir para tirar, tire na hora** e coloque o nome dele em `canais_bloqueados`.
 - Para monetizar no YouTube, cortes puros têm risco de reprovação. Ajuda adicionar algo seu: um comentário, uma reação sua ou uma compilação de vários youtubers no mesmo momento do trailer.

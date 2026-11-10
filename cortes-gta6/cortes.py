@@ -18,6 +18,7 @@ import json
 import random
 import re
 import shutil
+import unicodedata
 import subprocess
 import sys
 from pathlib import Path
@@ -91,18 +92,40 @@ def opcoes_ytdlp(cfg):
 PALAVRAS_REACAO = ("reag", "react", "reacao", "reação", "reaction", "assist", "vendo", "watch")
 
 
+def _norm(texto):
+    """'Davy Jones' == 'davyjones' == 'DAVY-JONES' (ignora acento, espaço e maiúscula)."""
+    t = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]", "", t)
+
+
+def na_lista(canal, lista):
+    c = _norm(canal)
+    return bool(c) and any(c == _norm(x) for x in lista or [])
+
+
+def fala_de_gta6(titulo):
+    t = f" {titulo.lower()} "
+    return "gta" in t and ("6" in t or re.search(r"\bvi\b", t) is not None)
+
+
 def parece_reacao(titulo):
-    t = titulo.lower()
-    tem_gta = "gta" in t and ("6" in t or " vi" in t or "vi " in t or "vi " in t)
-    return tem_gta and any(p in t for p in PALAVRAS_REACAO)
+    return fala_de_gta6(titulo) and any(p in titulo.lower() for p in PALAVRAS_REACAO)
+
+
+def video_serve(titulo, canal, cfg):
+    """Reação ao trailer. Para os canais da lista de permitidos basta falar de GTA 6 + trailer,
+    porque streamer nem sempre escreve "reagindo" no título."""
+    if parece_reacao(titulo):
+        return True
+    return (na_lista(canal, cfg.get("canais_permitidos")) and fala_de_gta6(titulo)
+            and "trailer" in titulo.lower())
 
 
 def canal_ok(canal, cfg):
-    c = (canal or "").strip().lower()
-    if any(c == b.strip().lower() for b in cfg.get("canais_bloqueados", [])):
+    if na_lista(canal, cfg.get("canais_bloqueados")):
         return False
     if cfg.get("somente_canais_permitidos"):
-        return any(c == p.strip().lower() for p in cfg.get("canais_permitidos", []))
+        return na_lista(canal, cfg.get("canais_permitidos"))
     return True
 
 
@@ -135,7 +158,7 @@ def buscar(cfg, estado):
         canal = e.get("channel") or e.get("uploader") or ""
         dur = e.get("duration") or 0
         views = e.get("view_count") or 0
-        if not parece_reacao(titulo):
+        if not video_serve(titulo, canal, cfg):
             continue
         if not canal_ok(canal, cfg):
             continue
@@ -145,8 +168,10 @@ def buscar(cfg, estado):
             continue
         candidatos.append(e)
 
-    # um vídeo por canal por rodada, os mais vistos primeiro
-    candidatos.sort(key=lambda e: e.get("view_count") or 0, reverse=True)
+    # um vídeo por canal por rodada: primeiro os canais permitidos, depois os mais vistos
+    permitidos = cfg.get("canais_permitidos")
+    candidatos.sort(key=lambda e: (na_lista(e.get("channel") or e.get("uploader"), permitidos),
+                                   e.get("view_count") or 0), reverse=True)
     escolhidos, canais = [], set()
     for e in candidatos:
         canal = (e.get("channel") or e.get("uploader") or "").lower()
