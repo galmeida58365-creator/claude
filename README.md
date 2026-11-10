@@ -2,6 +2,8 @@
 
 Organizador de finanças mensal em uma única página (HTML + CSS + JavaScript, sem dependências), também disponível como app Android e programa para Windows.
 
+> **Novo:** a pasta [`cortes-gta6`](cortes-gta6/LEIA-ME.md) tem o gerador de cortes das reações aos trailers de GTA 6 (YouTube Shorts e TikTok).
+
 **Quer usar o app?** Siga o [PASSO-A-PASSO.md](PASSO-A-PASSO.md): instalar no celular, abrir no computador e ligar a sincronização entre os dois, sem precisar saber programar.
 
 ## O que faz
