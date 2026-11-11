@@ -334,3 +334,20 @@ flowchart TD
 **Conferido:** o arquivo [`simulador.py`](simulador.py) monta tudo só com portas lógicas e
 testa as 32 combinações (16 somas + 16 subtrações). Todas dão certo no display.
 Para rodar: `python3 simulador.py`
+
+---
+
+## Desenhos dos circuitos (para copiar)
+
+| Bloco | Desenho |
+|---|---|
+| 1) Codificador 4→2 | ![](desenhos/1_codificador.png) |
+| 2a) Meio somador | ![](desenhos/2_meio_somador.png) |
+| 2b) Somador completo | ![](desenhos/3_somador_completo.png) |
+| 3a) Meio subtrator | ![](desenhos/4_meio_subtrator.png) |
+| 3b) Subtrator completo | ![](desenhos/5_subtrator_completo.png) |
+| 4) MUX 2→1 | ![](desenhos/6_mux.png) |
+| 5) Decodificador 7 segmentos | ![](desenhos/7_decodificador_7seg.png) |
+| 6) Diagrama de blocos | ![](desenhos/8_diagrama_de_blocos.png) |
+
+Tudo junto em PDF: [`desenhos/desenhos.pdf`](desenhos/desenhos.pdf). Para gerar de novo: `python3 desenhar_circuitos.py`.
