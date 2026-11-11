@@ -6,8 +6,9 @@ echo  Cortes GTA 6 - instalacao (so precisa fazer 1 vez)
 echo ==================================================
 echo.
 
-where py >nul 2>nul || (
-  echo Instalando o Python...
+rem Usa sempre o Python 3.12: as bibliotecas da legenda tem versao pronta para ele.
+py -3.12 --version >nul 2>nul || (
+  echo Instalando o Python 3.12...
   winget install -e --id Python.Python.3.12 --accept-source-agreements --accept-package-agreements
 )
 where ffmpeg >nul 2>nul || (
@@ -19,19 +20,39 @@ where deno >nul 2>nul || (
   winget install -e --id DenoLand.Deno --accept-source-agreements --accept-package-agreements
 )
 
-where py >nul 2>nul || goto reabrir
+py -3.12 --version >nul 2>nul || goto reabrir
 where ffmpeg >nul 2>nul || goto reabrir
 
+rem Se ja existe um ambiente feito com outra versao do Python, apaga e refaz.
+if exist venv\Scripts\python.exe (
+  venv\Scripts\python -c "import sys; sys.exit(0 if sys.version_info[:2] == (3, 12) else 1)" || (
+    echo Refazendo o ambiente com o Python 3.12...
+    rmdir /s /q venv
+  )
+)
 if not exist venv\Scripts\python.exe (
   echo Criando o ambiente do Python...
-  py -3 -m venv venv || goto erro
+  py -3.12 -m venv venv || goto erro
 )
-echo Instalando as bibliotecas - pode demorar alguns minutos...
+
+echo Instalando o yt-dlp e as bibliotecas...
 venv\Scripts\python -m pip install -q -U pip
-venv\Scripts\python -m pip install -U -r requisitos.txt || goto erro
+venv\Scripts\python -m pip install -U "yt-dlp[default]" numpy || goto erro
+
+echo.
+echo Instalando a legenda automatica - pode demorar alguns minutos...
+venv\Scripts\python -m pip install -U --only-binary=:all: faster-whisper || goto semlegenda
 
 echo.
 echo Tudo pronto! Agora de dois cliques no rodar.bat
+pause
+exit /b 0
+
+:semlegenda
+echo.
+echo AVISO: a legenda automatica nao instalou, mas o resto esta pronto.
+echo Os cortes vao sair sem legenda. Mande um print desta janela pro Claude.
+echo Ja pode usar o rodar.bat
 pause
 exit /b 0
 
