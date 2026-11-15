@@ -1,0 +1,576 @@
+<title>Quanto Falta Pra Passar</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* Layout: uma coluna estreita como um caderno; cada matéria é uma ficha com as notas à esquerda do resultado */
+  :root {
+    --bg: #eef2f7;
+    --card: #ffffff;
+    --ink: #172033;
+    --muted: #5b667a;
+    --line: #d5dce7;
+    --field: #f6f8fb;
+    --accent: #2453c9;
+    --accent-soft: #e3eafb;
+    --ok: #18794e;
+    --ok-soft: #dcf3e7;
+    --warn: #a35a00;
+    --warn-soft: #fcefd9;
+    --bad: #b42335;
+    --bad-soft: #fbe2e5;
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1420; --card: #171e2d; --ink: #e6ebf4; --muted: #98a3b8; --line: #2a3448; --field: #111827;
+      --accent: #7d9fff; --accent-soft: #1f2b4d;
+      --ok: #4cc98a; --ok-soft: #133426; --warn: #f0a94a; --warn-soft: #3a2a12; --bad: #ff7a8a; --bad-soft: #3d1a21;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1420; --card: #171e2d; --ink: #e6ebf4; --muted: #98a3b8; --line: #2a3448; --field: #111827;
+    --accent: #7d9fff; --accent-soft: #1f2b4d;
+    --ok: #4cc98a; --ok-soft: #133426; --warn: #f0a94a; --warn-soft: #3a2a12; --bad: #ff7a8a; --bad-soft: #3d1a21;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-block: 28px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: grid;
+    gap: 20px;
+  }
+  h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  header p { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .resumo { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: 0.8rem; font-weight: 600; white-space: nowrap;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .chip.ok { background: var(--ok-soft); color: var(--ok); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .chip.bad { background: var(--bad-soft); color: var(--bad); }
+  .chip.neutro { background: var(--field); color: var(--muted); border: 1px solid var(--line); }
+  .status { font-size: 0.8rem; color: var(--muted); }
+
+  button {
+    font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid transparent;
+    padding: 8px 14px; font-weight: 600;
+  }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-primario { background: var(--accent); color: var(--card); }
+  .btn-primario:hover { filter: brightness(1.08); }
+  .btn-sec { background: transparent; color: var(--accent); border-color: var(--line); }
+  .btn-sec:hover { background: var(--accent-soft); }
+  .btn-icone {
+    background: transparent; color: var(--muted); border: 0; padding: 6px; width: 34px; height: 34px;
+    display: grid; place-items: center; border-radius: 8px;
+  }
+  .btn-icone:hover { background: var(--bad-soft); color: var(--bad); }
+  .btn-perigo { background: transparent; color: var(--muted); border-color: var(--line); font-size: 0.85rem; padding: 6px 10px; }
+  .btn-perigo:hover, .btn-perigo.confirmar { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+
+  .aviso {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--accent-soft); color: var(--ink); border-radius: 12px; padding: 12px 14px; font-size: 0.9rem;
+  }
+
+  .lista { display: grid; gap: 16px; }
+  .ficha {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    overflow: hidden;
+  }
+  @media (max-width: 640px) { .ficha { grid-template-columns: 1fr; } }
+  .ficha-notas { padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+
+  .nome-linha { display: flex; align-items: center; gap: 8px; }
+  .nome {
+    flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem;
+    border: 1px solid transparent; background: transparent; color: var(--ink); padding: 2px 6px; margin-left: -6px; border-radius: 8px;
+  }
+  .nome:hover { border-color: var(--line); }
+  .nome:focus { border-color: var(--accent); background: var(--field); outline: none; }
+
+  .regras { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.85rem; color: var(--muted); }
+  .regras label { display: inline-flex; align-items: center; gap: 6px; }
+
+  input.campo {
+    font: inherit; color: var(--ink); background: var(--field);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; width: 100%; min-width: 0;
+  }
+  input.campo:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  input.campo[aria-invalid="true"] { border-color: var(--bad); background: var(--bad-soft); }
+  input.curto { width: 64px; text-align: center; }
+
+  .tabela { display: grid; gap: 6px; }
+  .linha {
+    display: grid; grid-template-columns: minmax(0, 1fr) 60px 72px 34px; gap: 6px; align-items: center;
+  }
+  .cab { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .cab span:nth-child(2), .cab span:nth-child(3) { text-align: center; }
+  .linha .peso, .linha .nota { text-align: center; }
+  .linha .nota:placeholder-shown { border-style: dashed; }
+  .rodape-tabela { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+  .dica { font-size: 0.8rem; color: var(--muted); }
+
+  .ficha-res {
+    padding: 18px 16px; display: grid; gap: 10px; align-content: center;
+    background: var(--field); border-left: 1px solid var(--line); min-width: 0;
+  }
+  @media (max-width: 640px) { .ficha-res { border-left: 0; border-top: 1px solid var(--line); } }
+  .rotulo { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .grande {
+    font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -0.03em;
+    font-size: clamp(2.6rem, 9vw, 3.4rem); font-variant-numeric: tabular-nums;
+  }
+  .grande small { font-size: 0.4em; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+  .grande.palavra { font-size: clamp(1.9rem, 6vw, 2.3rem); }
+  .ficha[data-s="garantido"] .grande, .ficha[data-s="aprovado"] .grande { color: var(--ok); }
+  .ficha[data-s="impossivel"] .grande, .ficha[data-s="reprovado"] .grande { color: var(--bad); }
+  .ficha[data-s="precisa"][data-n="dificil"] .grande { color: var(--warn); }
+  .explica { margin: 0; font-size: 0.88rem; color: var(--muted); }
+  .explica b { color: var(--ink); font-weight: 600; }
+
+  .regua { display: grid; gap: 4px; }
+  .trilho { position: relative; height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .trilho i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); transition: width .25s ease; }
+  .ficha[data-s="garantido"] .trilho i, .ficha[data-s="aprovado"] .trilho i { background: var(--ok); }
+  .ficha[data-n="dificil"] .trilho i { background: var(--warn); }
+  .ficha[data-s="impossivel"] .trilho i, .ficha[data-s="reprovado"] .trilho i { background: var(--bad); }
+  .escala { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .vazio {
+    text-align: center; padding: 40px 16px; border: 2px dashed var(--line); border-radius: 16px; color: var(--muted);
+    display: grid; gap: 12px; justify-items: center;
+  }
+  .vazio h2 { color: var(--ink); font-size: 1.3rem; }
+
+  .como { font-size: 0.88rem; color: var(--muted); display: grid; gap: 6px; }
+  .como h2 { font-size: 1.05rem; color: var(--ink); }
+  .como p { margin: 0; max-width: 68ch; }
+  .como code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.85em; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; color: var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) { .trilho i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="topo">
+    <div>
+      <h1>Quanto falta pra passar?</h1>
+      <p>Coloque suas notas e o peso de cada avaliação. O app calcula a nota que você precisa tirar no que ainda falta.</p>
+    </div>
+  </header>
+
+  <div class="topo">
+    <div class="resumo" id="resumo"></div>
+    <span class="status" id="status" aria-live="polite">Carregando…</span>
+  </div>
+
+  <div class="aviso" id="aviso-exemplo" hidden>
+    <span><b>Estas matérias são um exemplo.</b> Edite à vontade ou comece com as suas.</span>
+    <button type="button" class="btn-sec" id="limpar-exemplo">Começar do zero</button>
+  </div>
+
+  <section class="lista" id="lista" aria-label="Matérias"></section>
+
+  <div><button type="button" class="btn-primario" id="add-materia">+ Adicionar matéria</button></div>
+
+  <section class="como">
+    <h2>Como a conta é feita</h2>
+    <p>A média é ponderada: cada nota é multiplicada pelo peso, somada, e dividida pela soma dos pesos. Se todas as avaliações valem o mesmo, deixe peso 1 em todas.</p>
+    <p>Deixe a nota em branco nas avaliações que ainda não aconteceram. O número grande é a nota mínima que você precisa tirar em cada uma delas para fechar a média.</p>
+    <p>Pode usar vírgula ou ponto: <code>7,5</code> ou <code>7.5</code>.</p>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const CHAVE = "quanto-falta-notas-v1";
+  const $ = (id) => document.getElementById(id);
+  const novoId = () => Math.random().toString(36).slice(2, 10);
+
+  // ---------- exemplo inicial (só aparece enquanto nada foi salvo) ----------
+  function exemplo() {
+    return {
+      exemplo: true,
+      materias: [
+        { id: novoId(), nome: "Matemática", media: 6, max: 10, avals: [
+          { id: novoId(), nome: "Prova 1", peso: "3", nota: "5,5" },
+          { id: novoId(), nome: "Trabalho", peso: "2", nota: "8" },
+          { id: novoId(), nome: "Prova 2", peso: "3", nota: "" },
+        ]},
+        { id: novoId(), nome: "História", media: 7, max: 10, avals: [
+          { id: novoId(), nome: "Prova 1", peso: "1", nota: "9" },
+          { id: novoId(), nome: "Prova 2", peso: "1", nota: "8,5" },
+          { id: novoId(), nome: "Seminário", peso: "1", nota: "" },
+        ]},
+        { id: novoId(), nome: "Física", media: 6, max: 10, avals: [
+          { id: novoId(), nome: "Prova 1", peso: "1", nota: "2" },
+          { id: novoId(), nome: "Prova 2", peso: "1", nota: "3" },
+          { id: novoId(), nome: "Prova 3", peso: "1", nota: "" },
+        ]},
+      ],
+    };
+  }
+  function materiaNova() {
+    return { id: novoId(), nome: "Nova matéria", media: 6, max: 10, avals: [
+      { id: novoId(), nome: "Prova 1", peso: "1", nota: "" },
+      { id: novoId(), nome: "Prova 2", peso: "1", nota: "" },
+    ]};
+  }
+
+  // ---------- números ----------
+  function lerNum(txt) {
+    const s = String(txt ?? "").trim().replace(/\s/g, "").replace(",", ".");
+    if (s === "") return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+  const fmt = (x) => x.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+  const arredCima = (x) => Math.ceil(x * 100 - 1e-7) / 100;
+  const arredBaixo = (x) => Math.floor(x * 100 + 1e-7) / 100;
+
+  function regraMateria(m) {
+    const media = lerNum(m.media), max = lerNum(m.max);
+    return {
+      media: Number.isFinite(media) && media >= 0 ? media : null,
+      max: Number.isFinite(max) && max > 0 ? max : null,
+    };
+  }
+
+  function calcular(m) {
+    const { media, max } = regraMateria(m);
+    let pesoTotal = 0, pesoFeito = 0, pontos = 0, pendentes = 0;
+    const invalidos = new Set();
+    for (const a of m.avals) {
+      let peso = lerNum(a.peso);
+      if (peso === null) peso = 1;
+      if (!Number.isFinite(peso) || peso < 0) { invalidos.add(a.id + ":peso"); continue; }
+      const nota = lerNum(a.nota);
+      if (nota !== null && (!Number.isFinite(nota) || nota < 0 || (max !== null && nota > max))) {
+        invalidos.add(a.id + ":nota");
+        continue;
+      }
+      if (peso === 0) continue;
+      pesoTotal += peso;
+      if (nota === null) { pendentes++; continue; }
+      pesoFeito += peso;
+      pontos += nota * peso;
+    }
+    const r = { media, max, pesoTotal, pesoFeito, pontos, pendentes, invalidos,
+      mediaAtual: pesoFeito > 0 ? pontos / pesoFeito : null };
+    if (media === null || max === null) return { ...r, s: "regra" };
+    if (pesoTotal === 0) return { ...r, s: "vazio" };
+    const pesoFalta = pesoTotal - pesoFeito;
+    if (pesoFalta <= 0) {
+      const final = pontos / pesoTotal;
+      return { ...r, final, s: final + 1e-9 >= media ? "aprovado" : "reprovado" };
+    }
+    const precisa = (media * pesoTotal - pontos) / pesoFalta;
+    const seZerar = pontos / pesoTotal;
+    const seMaximo = (pontos + max * pesoFalta) / pesoTotal;
+    const base = { ...r, pesoFalta, precisa, seZerar, seMaximo };
+    if (precisa <= 1e-9) return { ...base, s: "garantido" };
+    if (precisa > max + 1e-9) return { ...base, s: "impossivel" };
+    const n = precisa > max * 0.85 ? "dificil" : precisa > media ? "atencao" : "tranquilo";
+    return { ...base, s: "precisa", n };
+  }
+
+  // ---------- estado e armazenamento ----------
+  let estado = { exemplo: true, materias: [] };
+  let store = null; // null = só este navegador
+  let timer = null, fila = Promise.resolve();
+
+  function lerLocal() {
+    try { const t = localStorage.getItem(CHAVE); return t ? JSON.parse(t) : null; } catch { return null; }
+  }
+  function valido(d) { return d && Array.isArray(d.materias); }
+
+  function setStatus(s) {
+    const onde = store ? "na sua conta" : "neste navegador";
+    $("status").textContent = { ok: `Salvo ${onde}`, salvando: "Salvando…", erro: "Não foi possível salvar agora. Tente de novo em instantes.", exemplo: "Exemplo (ainda não salvo)" }[s] || "";
+  }
+
+  function mudou() {
+    if (estado.exemplo) { estado.exemplo = false; $("aviso-exemplo").hidden = true; }
+    setStatus("salvando");
+    clearTimeout(timer);
+    timer = setTimeout(salvar, 600);
+  }
+  function salvar() {
+    const copia = JSON.parse(JSON.stringify({ materias: estado.materias }));
+    try { localStorage.setItem(CHAVE, JSON.stringify(copia)); } catch { /* armazenamento bloqueado */ }
+    fila = fila.then(async () => {
+      try {
+        if (store) await store.set({ ...copia, atualizado: Date.now() });
+        setStatus("ok");
+      } catch { setStatus(store ? "erro" : "ok"); }
+    });
+  }
+
+  async function conectarConta() {
+    if (!window.claude || typeof window.claude.use !== "function") return null;
+    try {
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (!db || !user) return null;
+      const uid = await user.id();
+      if (!uid) return null;
+      return db.collection("data/users/" + uid).doc("notas");
+    } catch { return null; }
+  }
+
+  // ---------- desenho ----------
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const lixo = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function htmlMateria(m) {
+    const linhas = m.avals.map((a) => `
+      <div class="linha" data-aval="${a.id}">
+        <input class="campo" id="an-${a.id}" data-f="nome" value="${esc(a.nome)}" aria-label="Nome da avaliação" placeholder="Avaliação">
+        <input class="campo peso num" id="ap-${a.id}" data-f="peso" value="${esc(a.peso)}" inputmode="decimal" aria-label="Peso de ${esc(a.nome)}" placeholder="1">
+        <input class="campo nota num" id="av-${a.id}" data-f="nota" value="${esc(a.nota)}" inputmode="decimal" aria-label="Nota de ${esc(a.nome)}" placeholder="—">
+        <button type="button" class="btn-icone" data-acao="del-aval" aria-label="Remover ${esc(a.nome)}" title="Remover">${lixo}</button>
+      </div>`).join("");
+    return `
+      <article class="ficha" id="m-${m.id}" data-materia="${m.id}">
+        <div class="ficha-notas">
+          <div class="nome-linha">
+            <input class="nome" id="mn-${m.id}" data-f="m-nome" value="${esc(m.nome)}" aria-label="Nome da matéria">
+            <button type="button" class="btn-perigo" data-acao="del-materia">Apagar</button>
+          </div>
+          <div class="regras">
+            <label>Média para passar <input class="campo curto num" id="mm-${m.id}" data-f="m-media" value="${esc(m.media)}" inputmode="decimal"></label>
+            <label>Nota máxima <input class="campo curto num" id="mx-${m.id}" data-f="m-max" value="${esc(m.max)}" inputmode="decimal"></label>
+          </div>
+          <div class="tabela">
+            <div class="linha cab" aria-hidden="true"><span>Avaliação</span><span>Peso</span><span>Nota</span><span></span></div>
+            ${linhas}
+          </div>
+          <div class="rodape-tabela">
+            <button type="button" class="btn-sec" data-acao="add-aval">+ Avaliação</button>
+            <span class="dica">Nota em branco = ainda vai fazer</span>
+          </div>
+        </div>
+        <div class="ficha-res" data-res></div>
+      </article>`;
+  }
+
+  function htmlResultado(r) {
+    const max = r.max, f = fmt;
+    const regua = (valor, rot) => {
+      const pct = Math.max(0, Math.min(100, (valor / max) * 100));
+      return `<div class="regua" aria-hidden="true"><div class="trilho"><i style="width:${pct}%"></i></div>
+        <div class="escala"><span>0</span><span>${rot}</span><span>${f(max)}</span></div></div>`;
+    };
+    switch (r.s) {
+      case "regra":
+        return `<span class="rotulo">Falta configurar</span><p class="explica">Preencha a média para passar e a nota máxima (por exemplo 6 e 10).</p>`;
+      case "vazio":
+        return `<span class="rotulo">Sem avaliações</span><p class="explica">Adicione as provas e trabalhos dessa matéria.</p>`;
+      case "garantido":
+        return `<span class="rotulo">Situação</span>
+          <div class="grande palavra">Já passou</div>
+          ${regua(r.seZerar, "média garantida " + f(arredBaixo(r.seZerar)))}
+          <p class="explica">Mesmo tirando 0 no que falta, sua média fica <b class="num">${f(arredBaixo(r.seZerar))}</b>. A mínima é ${f(r.media)}.</p>`;
+      case "impossivel":
+        return `<span class="rotulo">Situação</span>
+          <div class="grande palavra">Não dá mais</div>
+          ${regua(r.seMaximo, "melhor caso " + f(arredBaixo(r.seMaximo)))}
+          <p class="explica">Precisaria de <b class="num">${f(arredCima(r.precisa))}</b>, acima da nota máxima. Tirando ${f(max)} em tudo, a média chega a <b class="num">${f(arredBaixo(r.seMaximo))}</b>. Veja se a escola tem recuperação.</p>`;
+      case "aprovado":
+        return `<span class="rotulo">Média final</span>
+          <div class="grande">${f(arredBaixo(r.final))}<small> / ${f(max)}</small></div>
+          ${regua(r.final, "aprovado")}
+          <p class="explica"><b>Aprovado.</b> A média mínima era ${f(r.media)}.</p>`;
+      case "reprovado":
+        return `<span class="rotulo">Média final</span>
+          <div class="grande">${f(arredBaixo(r.final))}<small> / ${f(max)}</small></div>
+          ${regua(r.final, "faltou " + f(arredCima(r.media - r.final)))}
+          <p class="explica">Ficou abaixo da média ${f(r.media)} por <b class="num">${f(arredCima(r.media - r.final))}</b> ponto(s). Veja se a escola tem recuperação.</p>`;
+      default: {
+        const cada = r.pendentes > 1 ? `em cada uma das <b>${r.pendentes}</b> avaliações que faltam` : "na avaliação que falta";
+        const atual = r.mediaAtual !== null ? ` Sua média até agora: <b class="num">${f(arredBaixo(r.mediaAtual))}</b>.` : "";
+        return `<span class="rotulo">Precisa tirar</span>
+          <div class="grande">${f(arredCima(r.precisa))}<small> / ${f(max)}</small></div>
+          ${regua(r.precisa, { tranquilo: "tranquilo", atencao: "atenção", dificil: "difícil" }[r.n])}
+          <p class="explica">Nota mínima ${cada} para fechar média ${f(r.media)}.${atual}</p>`;
+      }
+    }
+  }
+
+  function atualizarMateria(m) {
+    const el = $("m-" + m.id);
+    if (!el) return;
+    const r = calcular(m);
+    el.dataset.s = r.s;
+    el.dataset.n = r.n || "";
+    el.querySelector("[data-res]").innerHTML = htmlResultado(r);
+    for (const a of m.avals) {
+      const p = $("ap-" + a.id), n = $("av-" + a.id);
+      if (p) p.setAttribute("aria-invalid", r.invalidos.has(a.id + ":peso"));
+      if (n) n.setAttribute("aria-invalid", r.invalidos.has(a.id + ":nota"));
+    }
+    const mm = $("mm-" + m.id), mx = $("mx-" + m.id);
+    const reg = regraMateria(m);
+    if (mm) mm.setAttribute("aria-invalid", reg.media === null);
+    if (mx) mx.setAttribute("aria-invalid", reg.max === null);
+  }
+
+  function atualizarResumo() {
+    const c = { ok: 0, precisa: 0, risco: 0 };
+    for (const m of estado.materias) {
+      const r = calcular(m);
+      if (r.s === "garantido" || r.s === "aprovado") c.ok++;
+      else if (r.s === "impossivel" || r.s === "reprovado") c.risco++;
+      else if (r.s === "precisa") c.precisa++;
+    }
+    const total = estado.materias.length;
+    const partes = [`<span class="chip neutro num">${total} ${total === 1 ? "matéria" : "matérias"}</span>`];
+    if (c.ok) partes.push(`<span class="chip ok num">${c.ok} já ${c.ok === 1 ? "passou" : "passaram"}</span>`);
+    if (c.precisa) partes.push(`<span class="chip warn num">${c.precisa} ainda ${c.precisa === 1 ? "precisa" : "precisam"} de nota</span>`);
+    if (c.risco) partes.push(`<span class="chip bad num">${c.risco} sem chance na média</span>`);
+    $("resumo").innerHTML = partes.join("");
+  }
+
+  function desenhar() {
+    const lista = $("lista");
+    if (!estado.materias.length) {
+      lista.innerHTML = `<div class="vazio"><h2>Nenhuma matéria ainda</h2><p>Adicione a primeira matéria e coloque as notas que você já tem.</p></div>`;
+    } else {
+      lista.innerHTML = estado.materias.map(htmlMateria).join("");
+      estado.materias.forEach(atualizarMateria);
+    }
+    $("aviso-exemplo").hidden = !estado.exemplo || !estado.materias.length;
+    atualizarResumo();
+  }
+
+  // ---------- interação ----------
+  const achar = (el) => {
+    const card = el.closest("[data-materia]");
+    const m = card && estado.materias.find((x) => x.id === card.dataset.materia);
+    const linha = el.closest("[data-aval]");
+    const a = m && linha && m.avals.find((x) => x.id === linha.dataset.aval);
+    return { m, a };
+  };
+
+  $("lista").addEventListener("input", (e) => {
+    const t = e.target, f = t.dataset.f;
+    if (!f) return;
+    const { m, a } = achar(t);
+    if (!m) return;
+    if (f === "m-nome") m.nome = t.value;
+    else if (f === "m-media") m.media = t.value;
+    else if (f === "m-max") m.max = t.value;
+    else if (a) a[f] = t.value;
+    if (a && f === "nome") {
+      $("ap-" + a.id)?.setAttribute("aria-label", "Peso de " + t.value);
+      $("av-" + a.id)?.setAttribute("aria-label", "Nota de " + t.value);
+    }
+    atualizarMateria(m);
+    atualizarResumo();
+    mudou();
+  });
+
+  const confirmando = new Map();
+  $("lista").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-acao]");
+    if (!b) return;
+    const { m, a } = achar(b);
+    if (!m) return;
+    const acao = b.dataset.acao;
+    if (acao === "add-aval") {
+      const nova = { id: novoId(), nome: "Avaliação " + (m.avals.length + 1), peso: "1", nota: "" };
+      m.avals.push(nova);
+      desenhar(); mudou();
+      $("an-" + nova.id)?.select();
+    } else if (acao === "del-aval" && a) {
+      m.avals = m.avals.filter((x) => x !== a);
+      desenhar(); mudou();
+    } else if (acao === "del-materia") {
+      if (!confirmando.has(m.id)) {
+        b.textContent = "Confirmar?";
+        b.classList.add("confirmar");
+        confirmando.set(m.id, setTimeout(() => {
+          confirmando.delete(m.id);
+          b.textContent = "Apagar";
+          b.classList.remove("confirmar");
+        }, 3000));
+        return;
+      }
+      clearTimeout(confirmando.get(m.id));
+      confirmando.delete(m.id);
+      estado.materias = estado.materias.filter((x) => x !== m);
+      desenhar(); mudou();
+    }
+  });
+
+  $("add-materia").addEventListener("click", () => {
+    const m = materiaNova();
+    estado.materias.push(m);
+    desenhar(); mudou();
+    const nome = $("mn-" + m.id);
+    nome?.focus(); nome?.select();
+    $("m-" + m.id)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+
+  $("limpar-exemplo").addEventListener("click", () => {
+    estado.materias = [materiaNova()];
+    desenhar(); mudou();
+    $("mn-" + estado.materias[0].id)?.select();
+  });
+
+  // ---------- início ----------
+  const local = lerLocal();
+  estado = valido(local) ? { exemplo: false, materias: local.materias } : exemplo();
+  desenhar();
+  setStatus(estado.exemplo ? "exemplo" : "ok");
+
+  (async () => {
+    const doc = await conectarConta();
+    if (!doc) return;
+    store = doc;
+    try {
+      const snap = await doc.get();
+      const dados = snap.exists ? snap.data() : null;
+      if (valido(dados)) {
+        // Só troca a tela se a pessoa ainda não começou a mexer neste aparelho.
+        if (!timer) {
+          estado = { exemplo: false, materias: dados.materias };
+          desenhar();
+        }
+        setStatus("ok");
+      } else if (!estado.exemplo) {
+        salvar(); // leva o que já estava neste navegador para a conta
+      } else {
+        setStatus("exemplo");
+      }
+    } catch {
+      store = null;
+      setStatus(estado.exemplo ? "exemplo" : "ok");
+    }
+  })();
+})();
+</script>
