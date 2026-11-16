@@ -331,6 +331,15 @@
     });
   }
 
+  // Grava na hora o que ainda está esperando (o app Android chama isto ao sair da tela).
+  function salvarAgora() {
+    if (!timer || $("status").textContent !== "Salvando…") return;
+    clearTimeout(timer);
+    salvar();
+  }
+  window.notasSalvarAgora = salvarAgora;
+  document.addEventListener("visibilitychange", () => { if (document.hidden) salvarAgora(); });
+
   async function conectarConta() {
     if (!window.claude || typeof window.claude.use !== "function") return null;
     try {
