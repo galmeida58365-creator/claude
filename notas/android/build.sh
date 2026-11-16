@@ -5,8 +5,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSAO_CODIGO=1
-VERSAO_NOME=1.0
+VERSAO_CODIGO=2
+VERSAO_NOME=1.1
 SENHA=quantofalta   # senha da chave de assinatura em quanto-falta.p12
 
 COMUM=../../android
@@ -33,7 +33,13 @@ fi
 rm -rf "$OUT"
 mkdir -p "$OUT/res" "$OUT/gen" "$OUT/classes" "$OUT/assets" "$OUT/assina"
 
-python3 montar_pagina.py ../index.html "$OUT/pagina.html"
+# Se existir notas/meu-boletim.json (particular, fora do repositório), o app já abre com essas matérias.
+BOLETIM=../meu-boletim.json
+if [ -f "$BOLETIM" ]; then
+  python3 montar_pagina.py ../index.html "$OUT/pagina.html" "$BOLETIM"
+else
+  python3 montar_pagina.py ../index.html "$OUT/pagina.html"
+fi
 python3 "$COMUM/embutir_fontes.py" "$OUT/pagina.html" "$OUT/assets"
 
 "$FER/aapt2" compile --dir res -o "$OUT/res/"

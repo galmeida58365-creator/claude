@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap">
 <style>
-  /* Layout: uma coluna estreita como um caderno; cada matéria é uma ficha com as notas à esquerda do resultado */
+  /* Layout: uma coluna estreita como um caderno; cada matéria é uma linha que abre numa ficha com os pontos e o resultado */
   :root {
     --bg: #eef2f7;
     --card: #ffffff;
@@ -53,17 +53,17 @@
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     display: grid;
-    gap: 20px;
+    gap: 18px;
   }
   h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
   h1 { font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
   header p { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
   .num { font-variant-numeric: tabular-nums; }
 
-  .topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
   .resumo { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: baseline; gap: 4px;
     padding: 3px 10px; border-radius: 999px;
     font-size: 0.8rem; font-weight: 600; white-space: nowrap;
     background: var(--accent-soft); color: var(--accent);
@@ -95,26 +95,28 @@
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
     background: var(--accent-soft); color: var(--ink); border-radius: 12px; padding: 12px 14px; font-size: 0.9rem;
   }
+  .aviso .botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .aviso .btn-sec { background: var(--card); }
 
-  .lista { display: grid; gap: 16px; }
-  .ficha {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-    overflow: hidden;
+  .lista { display: grid; gap: 10px; }
+  .ficha { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .cabeca {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: transparent; color: var(--ink); border: 0; border-radius: 0; padding: 13px 14px;
   }
-  @media (max-width: 640px) { .ficha { grid-template-columns: 1fr; } }
-  .ficha-notas { padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .cabeca:hover { background: var(--field); }
+  .cabeca:focus-visible { outline-offset: -2px; }
+  .cab-nome { flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.08rem; line-height: 1.2; overflow-wrap: anywhere; }
+  .seta { flex: none; color: var(--muted); transition: transform .2s ease; }
+  .cabeca[aria-expanded="true"] .seta { transform: rotate(180deg); }
+
+  .corpo { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); border-top: 1px solid var(--line); }
+  @media (max-width: 640px) { .corpo { grid-template-columns: 1fr; } }
+  .ficha-notas { padding: 14px; display: grid; gap: 12px; align-content: start; min-width: 0; }
 
   .nome-linha { display: flex; align-items: center; gap: 8px; }
-  .nome {
-    flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.3rem;
-    border: 1px solid transparent; background: transparent; color: var(--ink); padding: 2px 6px; margin-left: -6px; border-radius: 8px;
-  }
-  .nome:hover { border-color: var(--line); }
-  .nome:focus { border-color: var(--accent); background: var(--field); outline: none; }
-
-  .regras { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.85rem; color: var(--muted); }
-  .regras label { display: inline-flex; align-items: center; gap: 6px; }
+  .regras { font-size: 0.85rem; color: var(--muted); }
+  .regras label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
   input.campo {
     font: inherit; color: var(--ink); background: var(--field);
@@ -125,25 +127,23 @@
   input.curto { width: 64px; text-align: center; }
 
   .tabela { display: grid; gap: 6px; }
-  .linha {
-    display: grid; grid-template-columns: minmax(0, 1fr) 60px 72px 34px; gap: 6px; align-items: center;
-  }
+  .linha { display: grid; grid-template-columns: minmax(0, 1fr) 60px 72px 34px; gap: 6px; align-items: center; }
   .cab { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .cab span:nth-child(2), .cab span:nth-child(3) { text-align: center; }
-  .linha .peso, .linha .nota { text-align: center; }
+  .linha .vale, .linha .nota { text-align: center; }
   .linha .nota:placeholder-shown { border-style: dashed; }
   .rodape-tabela { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
   .dica { font-size: 0.8rem; color: var(--muted); }
 
   .ficha-res {
-    padding: 18px 16px; display: grid; gap: 10px; align-content: center;
+    padding: 16px 14px; display: grid; gap: 10px; align-content: center;
     background: var(--field); border-left: 1px solid var(--line); min-width: 0;
   }
   @media (max-width: 640px) { .ficha-res { border-left: 0; border-top: 1px solid var(--line); } }
   .rotulo { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
   .grande {
     font-family: var(--font-display); font-weight: 800; line-height: 1; letter-spacing: -0.03em;
-    font-size: clamp(2.6rem, 9vw, 3.4rem); font-variant-numeric: tabular-nums;
+    font-size: clamp(2.6rem, 9vw, 3.2rem); font-variant-numeric: tabular-nums;
   }
   .grande small { font-size: 0.4em; font-weight: 600; color: var(--muted); letter-spacing: 0; }
   .grande.palavra { font-size: clamp(1.9rem, 6vw, 2.3rem); }
@@ -154,33 +154,33 @@
   .explica b { color: var(--ink); font-weight: 600; }
 
   .regua { display: grid; gap: 4px; }
-  .trilho { position: relative; height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .trilho { position: relative; height: 10px; border-radius: 999px; background: var(--line); }
   .trilho i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); transition: width .25s ease; }
+  .trilho b { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--ink); }
   .ficha[data-s="garantido"] .trilho i, .ficha[data-s="aprovado"] .trilho i { background: var(--ok); }
   .ficha[data-n="dificil"] .trilho i { background: var(--warn); }
   .ficha[data-s="impossivel"] .trilho i, .ficha[data-s="reprovado"] .trilho i { background: var(--bad); }
-  .escala { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .escala { display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
   .vazio {
     text-align: center; padding: 40px 16px; border: 2px dashed var(--line); border-radius: 16px; color: var(--muted);
     display: grid; gap: 12px; justify-items: center;
   }
   .vazio h2 { color: var(--ink); font-size: 1.3rem; }
+  .vazio p { margin: 0; }
 
   .como { font-size: 0.88rem; color: var(--muted); display: grid; gap: 6px; }
   .como h2 { font-size: 1.05rem; color: var(--ink); }
   .como p { margin: 0; max-width: 68ch; }
   .como code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.85em; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; color: var(--ink); }
 
-  @media (prefers-reduced-motion: reduce) { .trilho i { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .trilho i, .seta { transition: none; } }
 </style>
 
 <div class="wrap">
-  <header class="topo">
-    <div>
-      <h1>Quanto falta pra passar?</h1>
-      <p>Coloque suas notas e o peso de cada avaliação. O app calcula a nota que você precisa tirar no que ainda falta.</p>
-    </div>
+  <header>
+    <h1>Quanto falta pra passar?</h1>
+    <p>Coloque os pontos que você já tirou. O app mostra quantos pontos ainda faltam para passar em cada matéria.</p>
   </header>
 
   <div class="topo">
@@ -193,135 +193,145 @@
     <button type="button" class="btn-sec" id="limpar-exemplo">Começar do zero</button>
   </div>
 
+  <div class="aviso" id="aviso-boletim" hidden>
+    <span><b>Tem um boletim pronto para carregar.</b> Ele troca as matérias que estão aqui pelas do boletim.</span>
+    <span class="botoes">
+      <button type="button" class="btn-primario" id="carregar-boletim">Carregar boletim</button>
+      <button type="button" class="btn-sec" id="manter-atual">Manter o que tenho</button>
+    </span>
+  </div>
+
   <section class="lista" id="lista" aria-label="Matérias"></section>
 
   <div><button type="button" class="btn-primario" id="add-materia">+ Adicionar matéria</button></div>
 
   <section class="como">
     <h2>Como a conta é feita</h2>
-    <p>A média é ponderada: cada nota é multiplicada pelo peso, somada, e dividida pela soma dos pesos. Se todas as avaliações valem o mesmo, deixe peso 1 em todas.</p>
-    <p>Deixe a nota em branco nas avaliações que ainda não aconteceram. O número grande é a nota mínima que você precisa tirar em cada uma delas para fechar a média.</p>
-    <p>Pode usar vírgula ou ponto: <code>7,5</code> ou <code>7.5</code>.</p>
+    <p>Cada avaliação vale um número de pontos. O app soma os pontos que você já tirou e mostra quanto falta para chegar ao mínimo da matéria. Por exemplo: três trimestres valendo 30, 30 e 40 pontos, com mínimo de 60 para passar.</p>
+    <p>Deixe a nota em branco no que ainda não aconteceu. Toque numa matéria para abrir e mudar as notas.</p>
+    <p>Pode usar vírgula ou ponto: <code>18,5</code> ou <code>18.5</code>.</p>
   </section>
 </div>
 
+<!-- NOTAS_INICIAIS -->
 <script>
 (() => {
   "use strict";
   const CHAVE = "quanto-falta-notas-v1";
   const $ = (id) => document.getElementById(id);
   const novoId = () => Math.random().toString(36).slice(2, 10);
+  const txt = (n) => (n === null || n === undefined || n === "" ? "" : String(n).replace(".", ","));
 
-  // ---------- exemplo inicial (só aparece enquanto nada foi salvo) ----------
-  function exemplo() {
-    return {
-      exemplo: true,
-      materias: [
-        { id: novoId(), nome: "Matemática", media: 6, max: 10, avals: [
-          { id: novoId(), nome: "Prova 1", peso: "3", nota: "5,5" },
-          { id: novoId(), nome: "Trabalho", peso: "2", nota: "8" },
-          { id: novoId(), nome: "Prova 2", peso: "3", nota: "" },
-        ]},
-        { id: novoId(), nome: "História", media: 7, max: 10, avals: [
-          { id: novoId(), nome: "Prova 1", peso: "1", nota: "9" },
-          { id: novoId(), nome: "Prova 2", peso: "1", nota: "8,5" },
-          { id: novoId(), nome: "Seminário", peso: "1", nota: "" },
-        ]},
-        { id: novoId(), nome: "Física", media: 6, max: 10, avals: [
-          { id: novoId(), nome: "Prova 1", peso: "1", nota: "2" },
-          { id: novoId(), nome: "Prova 2", peso: "1", nota: "3" },
-          { id: novoId(), nome: "Prova 3", peso: "1", nota: "" },
-        ]},
-      ],
-    };
+  // Matérias que já vêm prontas (colocadas na hora de gerar o app). Sem elas, aparece um exemplo.
+  const SEMENTE = window.NOTAS_INICIAIS && Array.isArray(window.NOTAS_INICIAIS.materias) ? window.NOTAS_INICIAIS : null;
+
+  function deModelo(lista) {
+    return lista.map((m) => ({
+      id: novoId(), nome: String(m.nome), minimo: txt(m.minimo),
+      avals: m.avals.map((a) => ({ id: novoId(), nome: String(a.nome), vale: txt(a.vale), nota: txt(a.nota) })),
+    }));
   }
-  function materiaNova() {
-    return { id: novoId(), nome: "Nova matéria", media: 6, max: 10, avals: [
-      { id: novoId(), nome: "Prova 1", peso: "1", nota: "" },
-      { id: novoId(), nome: "Prova 2", peso: "1", nota: "" },
-    ]};
-  }
+  const tri = (a, b, c) => [
+    { nome: "1º trimestre", vale: 30, nota: a },
+    { nome: "2º trimestre", vale: 30, nota: b },
+    { nome: "3º trimestre", vale: 40, nota: c },
+  ];
+  const EXEMPLO = [
+    { nome: "Matemática", minimo: 60, avals: tri(19, 24, null) },
+    { nome: "História", minimo: 60, avals: tri(28, 27, null) },
+    { nome: "Física", minimo: 60, avals: tri(8, 9, null) },
+  ];
+  const materiaNova = () => deModelo([{ nome: "Nova matéria", minimo: 60, avals: tri(null, null, null) }])[0];
 
   // ---------- números ----------
-  function lerNum(txt) {
-    const s = String(txt ?? "").trim().replace(/\s/g, "").replace(",", ".");
+  function lerNum(t) {
+    const s = String(t ?? "").trim().replace(/\s/g, "").replace(",", ".");
     if (s === "") return null;
     const n = Number(s);
     return Number.isFinite(n) ? n : NaN;
   }
   const fmt = (x) => x.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
   const arredCima = (x) => Math.ceil(x * 100 - 1e-7) / 100;
-  const arredBaixo = (x) => Math.floor(x * 100 + 1e-7) / 100;
-
-  function regraMateria(m) {
-    const media = lerNum(m.media), max = lerNum(m.max);
-    return {
-      media: Number.isFinite(media) && media >= 0 ? media : null,
-      max: Number.isFinite(max) && max > 0 ? max : null,
-    };
-  }
+  const arred = (x) => Math.round(x * 100) / 100;
 
   function calcular(m) {
-    const { media, max } = regraMateria(m);
-    let pesoTotal = 0, pesoFeito = 0, pontos = 0, pendentes = 0;
-    const invalidos = new Set();
+    const min = lerNum(m.minimo);
+    const minimo = Number.isFinite(min) && min >= 0 ? min : null;
+    let total = 0, feito = 0, valeFalta = 0;
+    const pendentes = [], invalidos = new Set();
     for (const a of m.avals) {
-      let peso = lerNum(a.peso);
-      if (peso === null) peso = 1;
-      if (!Number.isFinite(peso) || peso < 0) { invalidos.add(a.id + ":peso"); continue; }
+      const vale = lerNum(a.vale);
+      if (vale === null || !Number.isFinite(vale) || vale < 0) { invalidos.add(a.id + ":vale"); continue; }
       const nota = lerNum(a.nota);
-      if (nota !== null && (!Number.isFinite(nota) || nota < 0 || (max !== null && nota > max))) {
-        invalidos.add(a.id + ":nota");
-        continue;
-      }
-      if (peso === 0) continue;
-      pesoTotal += peso;
-      if (nota === null) { pendentes++; continue; }
-      pesoFeito += peso;
-      pontos += nota * peso;
+      if (nota !== null && (!Number.isFinite(nota) || nota < 0 || nota > vale)) { invalidos.add(a.id + ":nota"); continue; }
+      if (vale === 0) continue;
+      total += vale;
+      if (nota === null) { valeFalta += vale; pendentes.push(a); }
+      else feito += nota;
     }
-    const r = { media, max, pesoTotal, pesoFeito, pontos, pendentes, invalidos,
-      mediaAtual: pesoFeito > 0 ? pontos / pesoFeito : null };
-    if (media === null || max === null) return { ...r, s: "regra" };
-    if (pesoTotal === 0) return { ...r, s: "vazio" };
-    const pesoFalta = pesoTotal - pesoFeito;
-    if (pesoFalta <= 0) {
-      const final = pontos / pesoTotal;
-      return { ...r, final, s: final + 1e-9 >= media ? "aprovado" : "reprovado" };
-    }
-    const precisa = (media * pesoTotal - pontos) / pesoFalta;
-    const seZerar = pontos / pesoTotal;
-    const seMaximo = (pontos + max * pesoFalta) / pesoTotal;
-    const base = { ...r, pesoFalta, precisa, seZerar, seMaximo };
-    if (precisa <= 1e-9) return { ...base, s: "garantido" };
-    if (precisa > max + 1e-9) return { ...base, s: "impossivel" };
-    const n = precisa > max * 0.85 ? "dificil" : precisa > media ? "atencao" : "tranquilo";
-    return { ...base, s: "precisa", n };
+    const r = { minimo, total, feito, valeFalta, pendentes, invalidos };
+    if (minimo === null) return { ...r, s: "regra" };
+    if (total === 0) return { ...r, s: "vazio" };
+    if (!pendentes.length) return { ...r, s: feito + 1e-9 >= minimo ? "aprovado" : "reprovado" };
+    const falta = minimo - feito;
+    if (falta <= 1e-9) return { ...r, falta: 0, s: "garantido" };
+    if (falta > valeFalta + 1e-9) return { ...r, falta, s: "impossivel" };
+    const fr = falta / valeFalta;
+    const n = fr > 0.85 ? "dificil" : fr > minimo / total + 1e-9 ? "atencao" : "tranquilo";
+    return { ...r, falta, s: "precisa", n };
+  }
+
+  // Versão antiga do app guardava peso e média; converte para pontos sem mudar o resultado.
+  function migrar(materias) {
+    return materias.map((m) => {
+      if (m.minimo !== undefined) return m;
+      const max = lerNum(m.max) > 0 ? lerNum(m.max) : 10;
+      const media = Number.isFinite(lerNum(m.media)) ? lerNum(m.media) : 6;
+      const pesos = (m.avals || []).map((a) => { const p = lerNum(a.peso); return p === null ? 1 : p > 0 ? p : 0; });
+      const soma = pesos.reduce((x, y) => x + y, 0) || 1;
+      return {
+        id: m.id || novoId(), nome: m.nome, minimo: txt(media),
+        avals: (m.avals || []).map((a, i) => {
+          const vale = (max * pesos[i]) / soma;
+          const nota = lerNum(a.nota);
+          return { id: a.id || novoId(), nome: a.nome, vale: txt(arred(vale)), nota: Number.isFinite(nota) ? txt(arred((nota / max) * vale)) : "" };
+        }),
+      };
+    });
   }
 
   // ---------- estado e armazenamento ----------
-  let estado = { exemplo: true, materias: [] };
-  let store = null; // null = só este navegador
-  let timer = null, fila = Promise.resolve();
+  let estado = { exemplo: false, semente: null, materias: [] };
+  let store = null;   // null = só este navegador ou aparelho
+  let timer = null, pendente = false, mexeu = false, fila = Promise.resolve();
+  const abertas = new Set();
 
   function lerLocal() {
     try { const t = localStorage.getItem(CHAVE); return t ? JSON.parse(t) : null; } catch { return null; }
   }
-  function valido(d) { return d && Array.isArray(d.materias); }
+  const valido = (d) => d && Array.isArray(d.materias);
+  const deSalvo = (d) => ({ exemplo: false, semente: d.semente || null, materias: migrar(d.materias) });
 
   function setStatus(s) {
-    const onde = store ? "na sua conta" : "neste navegador";
-    $("status").textContent = { ok: `Salvo ${onde}`, salvando: "Salvando…", erro: "Não foi possível salvar agora. Tente de novo em instantes.", exemplo: "Exemplo (ainda não salvo)" }[s] || "";
+    const onde = store ? "na sua conta" : "neste aparelho";
+    $("status").textContent = {
+      ok: `Salvo ${onde}`, salvando: "Salvando…", exemplo: "Exemplo (ainda não salvo)", boletim: "Boletim carregado",
+      erro: "Não foi possível salvar agora. Tente de novo em instantes.",
+    }[s] || "";
   }
 
   function mudou() {
+    mexeu = true;
     if (estado.exemplo) { estado.exemplo = false; $("aviso-exemplo").hidden = true; }
     setStatus("salvando");
+    pendente = true;
     clearTimeout(timer);
     timer = setTimeout(salvar, 600);
   }
   function salvar() {
-    const copia = JSON.parse(JSON.stringify({ materias: estado.materias }));
+    clearTimeout(timer);
+    pendente = false;
+    const copia = JSON.parse(JSON.stringify({ semente: estado.semente, materias: estado.materias }));
     try { localStorage.setItem(CHAVE, JSON.stringify(copia)); } catch { /* armazenamento bloqueado */ }
     fila = fila.then(async () => {
       try {
@@ -330,13 +340,8 @@
       } catch { setStatus(store ? "erro" : "ok"); }
     });
   }
-
   // Grava na hora o que ainda está esperando (o app Android chama isto ao sair da tela).
-  function salvarAgora() {
-    if (!timer || $("status").textContent !== "Salvando…") return;
-    clearTimeout(timer);
-    salvar();
-  }
+  const salvarAgora = () => { if (pendente) salvar(); };
   window.notasSalvarAgora = salvarAgora;
   document.addEventListener("visibilitychange", () => { if (document.hidden) salvarAgora(); });
 
@@ -354,79 +359,94 @@
   // ---------- desenho ----------
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const lixo = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const seta = '<svg class="seta" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function htmlMateria(m) {
+    const aberta = abertas.has(m.id);
     const linhas = m.avals.map((a) => `
       <div class="linha" data-aval="${a.id}">
         <input class="campo" id="an-${a.id}" data-f="nome" value="${esc(a.nome)}" aria-label="Nome da avaliação" placeholder="Avaliação">
-        <input class="campo peso num" id="ap-${a.id}" data-f="peso" value="${esc(a.peso)}" inputmode="decimal" aria-label="Peso de ${esc(a.nome)}" placeholder="1">
+        <input class="campo vale num" id="ap-${a.id}" data-f="vale" value="${esc(a.vale)}" inputmode="decimal" aria-label="Quanto vale ${esc(a.nome)}">
         <input class="campo nota num" id="av-${a.id}" data-f="nota" value="${esc(a.nota)}" inputmode="decimal" aria-label="Nota de ${esc(a.nome)}" placeholder="—">
         <button type="button" class="btn-icone" data-acao="del-aval" aria-label="Remover ${esc(a.nome)}" title="Remover">${lixo}</button>
       </div>`).join("");
     return `
       <article class="ficha" id="m-${m.id}" data-materia="${m.id}">
-        <div class="ficha-notas">
-          <div class="nome-linha">
-            <input class="nome" id="mn-${m.id}" data-f="m-nome" value="${esc(m.nome)}" aria-label="Nome da matéria">
-            <button type="button" class="btn-perigo" data-acao="del-materia">Apagar</button>
+        <button type="button" class="cabeca" data-acao="abrir" aria-expanded="${aberta}" aria-controls="mc-${m.id}">
+          <span class="cab-nome" data-cab-nome>${esc(m.nome) || "Sem nome"}</span>
+          <span data-cab-res></span>
+          ${seta}
+        </button>
+        <div class="corpo" id="mc-${m.id}"${aberta ? "" : " hidden"}>
+          <div class="ficha-notas">
+            <div class="nome-linha">
+              <input class="campo" id="mn-${m.id}" data-f="m-nome" value="${esc(m.nome)}" aria-label="Nome da matéria" placeholder="Nome da matéria">
+              <button type="button" class="btn-perigo" data-acao="del-materia">Apagar</button>
+            </div>
+            <div class="tabela">
+              <div class="linha cab" aria-hidden="true"><span>Avaliação</span><span>Vale</span><span>Nota</span><span></span></div>
+              ${linhas}
+            </div>
+            <div class="rodape-tabela">
+              <button type="button" class="btn-sec" data-acao="add-aval">+ Avaliação</button>
+              <span class="dica">Nota em branco = ainda vai fazer</span>
+            </div>
+            <div class="regras">
+              <label>Mínimo para passar <input class="campo curto num" id="mm-${m.id}" data-f="m-minimo" value="${esc(m.minimo)}" inputmode="decimal"> <span>de <b class="num" data-total></b> pontos</span></label>
+            </div>
           </div>
-          <div class="regras">
-            <label>Média para passar <input class="campo curto num" id="mm-${m.id}" data-f="m-media" value="${esc(m.media)}" inputmode="decimal"></label>
-            <label>Nota máxima <input class="campo curto num" id="mx-${m.id}" data-f="m-max" value="${esc(m.max)}" inputmode="decimal"></label>
-          </div>
-          <div class="tabela">
-            <div class="linha cab" aria-hidden="true"><span>Avaliação</span><span>Peso</span><span>Nota</span><span></span></div>
-            ${linhas}
-          </div>
-          <div class="rodape-tabela">
-            <button type="button" class="btn-sec" data-acao="add-aval">+ Avaliação</button>
-            <span class="dica">Nota em branco = ainda vai fazer</span>
-          </div>
+          <div class="ficha-res" data-res></div>
         </div>
-        <div class="ficha-res" data-res></div>
       </article>`;
   }
 
+  function htmlCabeca(r) {
+    const f = fmt;
+    switch (r.s) {
+      case "garantido": return `<span class="chip ok">Já passou</span>`;
+      case "aprovado": return `<span class="chip ok num">Aprovado · ${f(r.feito)}</span>`;
+      case "impossivel": return `<span class="chip bad">Não dá mais</span>`;
+      case "reprovado": return `<span class="chip bad num">Reprovado · ${f(r.feito)}</span>`;
+      case "precisa": return `<span class="chip ${r.n === "dificil" ? "warn" : ""} num">Faltam ${f(arredCima(r.falta))} de ${f(r.valeFalta)}</span>`;
+      default: return `<span class="chip neutro">Incompleta</span>`;
+    }
+  }
+
   function htmlResultado(r) {
-    const max = r.max, f = fmt;
-    const regua = (valor, rot) => {
-      const pct = Math.max(0, Math.min(100, (valor / max) * 100));
-      return `<div class="regua" aria-hidden="true"><div class="trilho"><i style="width:${pct}%"></i></div>
-        <div class="escala"><span>0</span><span>${rot}</span><span>${f(max)}</span></div></div>`;
+    const f = fmt;
+    const regua = () => {
+      const pct = (v) => Math.max(0, Math.min(100, (v / Math.max(r.total, r.minimo)) * 100));
+      return `<div class="regua" aria-hidden="true"><div class="trilho"><i style="width:${pct(r.feito)}%"></i><b style="left:${pct(r.minimo)}%"></b></div>
+        <div class="escala"><span>você tem ${f(r.feito)}</span><span>mínimo ${f(r.minimo)} de ${f(r.total)}</span></div></div>`;
     };
+    const onde = () => r.pendentes.length === 1
+      ? `em <b>${esc(r.pendentes[0].nome) || "na avaliação que falta"}</b>`
+      : `somando as <b>${r.pendentes.length}</b> avaliações que faltam`;
     switch (r.s) {
       case "regra":
-        return `<span class="rotulo">Falta configurar</span><p class="explica">Preencha a média para passar e a nota máxima (por exemplo 6 e 10).</p>`;
+        return `<span class="rotulo">Falta configurar</span><p class="explica">Preencha o mínimo de pontos para passar (por exemplo 60).</p>`;
       case "vazio":
-        return `<span class="rotulo">Sem avaliações</span><p class="explica">Adicione as provas e trabalhos dessa matéria.</p>`;
+        return `<span class="rotulo">Sem avaliações</span><p class="explica">Adicione as avaliações dessa matéria e quanto cada uma vale.</p>`;
       case "garantido":
         return `<span class="rotulo">Situação</span>
-          <div class="grande palavra">Já passou</div>
-          ${regua(r.seZerar, "média garantida " + f(arredBaixo(r.seZerar)))}
-          <p class="explica">Mesmo tirando 0 no que falta, sua média fica <b class="num">${f(arredBaixo(r.seZerar))}</b>. A mínima é ${f(r.media)}.</p>`;
+          <div class="grande palavra">Já passou</div>${regua()}
+          <p class="explica">Você já tem <b class="num">${f(r.feito)}</b> pontos e o mínimo é ${f(r.minimo)}. O que falta só aumenta a nota.</p>`;
       case "impossivel":
         return `<span class="rotulo">Situação</span>
-          <div class="grande palavra">Não dá mais</div>
-          ${regua(r.seMaximo, "melhor caso " + f(arredBaixo(r.seMaximo)))}
-          <p class="explica">Precisaria de <b class="num">${f(arredCima(r.precisa))}</b>, acima da nota máxima. Tirando ${f(max)} em tudo, a média chega a <b class="num">${f(arredBaixo(r.seMaximo))}</b>. Veja se a escola tem recuperação.</p>`;
+          <div class="grande palavra">Não dá mais</div>${regua()}
+          <p class="explica">Faltam <b class="num">${f(arredCima(r.falta))}</b> pontos e só restam <b class="num">${f(r.valeFalta)}</b> em jogo. Com nota máxima em tudo você chega a ${f(r.feito + r.valeFalta)}. Veja como funciona a recuperação.</p>`;
       case "aprovado":
-        return `<span class="rotulo">Média final</span>
-          <div class="grande">${f(arredBaixo(r.final))}<small> / ${f(max)}</small></div>
-          ${regua(r.final, "aprovado")}
-          <p class="explica"><b>Aprovado.</b> A média mínima era ${f(r.media)}.</p>`;
+        return `<span class="rotulo">Nota final</span>
+          <div class="grande">${f(r.feito)}<small> / ${f(r.total)}</small></div>${regua()}
+          <p class="explica"><b>Aprovado.</b> O mínimo era ${f(r.minimo)}.</p>`;
       case "reprovado":
-        return `<span class="rotulo">Média final</span>
-          <div class="grande">${f(arredBaixo(r.final))}<small> / ${f(max)}</small></div>
-          ${regua(r.final, "faltou " + f(arredCima(r.media - r.final)))}
-          <p class="explica">Ficou abaixo da média ${f(r.media)} por <b class="num">${f(arredCima(r.media - r.final))}</b> ponto(s). Veja se a escola tem recuperação.</p>`;
-      default: {
-        const cada = r.pendentes > 1 ? `em cada uma das <b>${r.pendentes}</b> avaliações que faltam` : "na avaliação que falta";
-        const atual = r.mediaAtual !== null ? ` Sua média até agora: <b class="num">${f(arredBaixo(r.mediaAtual))}</b>.` : "";
+        return `<span class="rotulo">Nota final</span>
+          <div class="grande">${f(r.feito)}<small> / ${f(r.total)}</small></div>${regua()}
+          <p class="explica">Faltaram <b class="num">${f(arredCima(r.minimo - r.feito))}</b> pontos para o mínimo de ${f(r.minimo)}. Veja como funciona a recuperação.</p>`;
+      default:
         return `<span class="rotulo">Precisa tirar</span>
-          <div class="grande">${f(arredCima(r.precisa))}<small> / ${f(max)}</small></div>
-          ${regua(r.precisa, { tranquilo: "tranquilo", atencao: "atenção", dificil: "difícil" }[r.n])}
-          <p class="explica">Nota mínima ${cada} para fechar média ${f(r.media)}.${atual}</p>`;
-      }
+          <div class="grande">${f(arredCima(r.falta))}<small> / ${f(r.valeFalta)}</small></div>${regua()}
+          <p class="explica">Pontos que você precisa ${onde()} para chegar a ${f(r.minimo)}.</p>`;
     }
   }
 
@@ -437,30 +457,29 @@
     el.dataset.s = r.s;
     el.dataset.n = r.n || "";
     el.querySelector("[data-res]").innerHTML = htmlResultado(r);
+    el.querySelector("[data-cab-res]").innerHTML = htmlCabeca(r);
+    el.querySelector("[data-cab-nome]").textContent = m.nome.trim() || "Sem nome";
+    el.querySelector("[data-total]").textContent = fmt(r.total);
     for (const a of m.avals) {
-      const p = $("ap-" + a.id), n = $("av-" + a.id);
-      if (p) p.setAttribute("aria-invalid", r.invalidos.has(a.id + ":peso"));
-      if (n) n.setAttribute("aria-invalid", r.invalidos.has(a.id + ":nota"));
+      $("ap-" + a.id)?.setAttribute("aria-invalid", r.invalidos.has(a.id + ":vale"));
+      $("av-" + a.id)?.setAttribute("aria-invalid", r.invalidos.has(a.id + ":nota"));
     }
-    const mm = $("mm-" + m.id), mx = $("mx-" + m.id);
-    const reg = regraMateria(m);
-    if (mm) mm.setAttribute("aria-invalid", reg.media === null);
-    if (mx) mx.setAttribute("aria-invalid", reg.max === null);
+    $("mm-" + m.id)?.setAttribute("aria-invalid", r.minimo === null);
   }
 
   function atualizarResumo() {
     const c = { ok: 0, precisa: 0, risco: 0 };
     for (const m of estado.materias) {
-      const r = calcular(m);
-      if (r.s === "garantido" || r.s === "aprovado") c.ok++;
-      else if (r.s === "impossivel" || r.s === "reprovado") c.risco++;
-      else if (r.s === "precisa") c.precisa++;
+      const s = calcular(m).s;
+      if (s === "garantido" || s === "aprovado") c.ok++;
+      else if (s === "impossivel" || s === "reprovado") c.risco++;
+      else if (s === "precisa") c.precisa++;
     }
     const total = estado.materias.length;
     const partes = [`<span class="chip neutro num">${total} ${total === 1 ? "matéria" : "matérias"}</span>`];
     if (c.ok) partes.push(`<span class="chip ok num">${c.ok} já ${c.ok === 1 ? "passou" : "passaram"}</span>`);
-    if (c.precisa) partes.push(`<span class="chip warn num">${c.precisa} ainda ${c.precisa === 1 ? "precisa" : "precisam"} de nota</span>`);
-    if (c.risco) partes.push(`<span class="chip bad num">${c.risco} sem chance na média</span>`);
+    if (c.precisa) partes.push(`<span class="chip num">${c.precisa} ainda ${c.precisa === 1 ? "precisa" : "precisam"} de pontos</span>`);
+    if (c.risco) partes.push(`<span class="chip bad num">${c.risco} sem chance pelo mínimo</span>`);
     $("resumo").innerHTML = partes.join("");
   }
 
@@ -473,7 +492,14 @@
       estado.materias.forEach(atualizarMateria);
     }
     $("aviso-exemplo").hidden = !estado.exemplo || !estado.materias.length;
+    $("aviso-boletim").hidden = !SEMENTE || estado.exemplo || estado.semente === SEMENTE.versao;
     atualizarResumo();
+  }
+
+  // Poucas matérias: já abre todas. Muitas: ficam fechadas, mostrando só o que falta.
+  function abrirPoucas() {
+    abertas.clear();
+    if (estado.materias.length <= 3) estado.materias.forEach((m) => abertas.add(m.id));
   }
 
   // ---------- interação ----------
@@ -491,11 +517,10 @@
     const { m, a } = achar(t);
     if (!m) return;
     if (f === "m-nome") m.nome = t.value;
-    else if (f === "m-media") m.media = t.value;
-    else if (f === "m-max") m.max = t.value;
+    else if (f === "m-minimo") m.minimo = t.value;
     else if (a) a[f] = t.value;
     if (a && f === "nome") {
-      $("ap-" + a.id)?.setAttribute("aria-label", "Peso de " + t.value);
+      $("ap-" + a.id)?.setAttribute("aria-label", "Quanto vale " + t.value);
       $("av-" + a.id)?.setAttribute("aria-label", "Nota de " + t.value);
     }
     atualizarMateria(m);
@@ -510,8 +535,13 @@
     const { m, a } = achar(b);
     if (!m) return;
     const acao = b.dataset.acao;
-    if (acao === "add-aval") {
-      const nova = { id: novoId(), nome: "Avaliação " + (m.avals.length + 1), peso: "1", nota: "" };
+    if (acao === "abrir") {
+      const abrir = !abertas.has(m.id);
+      if (abrir) abertas.add(m.id); else abertas.delete(m.id);
+      b.setAttribute("aria-expanded", abrir);
+      $("mc-" + m.id).hidden = !abrir;
+    } else if (acao === "add-aval") {
+      const nova = { id: novoId(), nome: "Avaliação " + (m.avals.length + 1), vale: "10", nota: "" };
       m.avals.push(nova);
       desenhar(); mudou();
       $("an-" + nova.id)?.select();
@@ -536,26 +566,43 @@
     }
   });
 
-  $("add-materia").addEventListener("click", () => {
-    const m = materiaNova();
-    estado.materias.push(m);
+  function abrirENomear(m) {
+    abertas.add(m.id);
     desenhar(); mudou();
     const nome = $("mn-" + m.id);
     nome?.focus(); nome?.select();
     $("m-" + m.id)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  $("add-materia").addEventListener("click", () => {
+    const m = materiaNova();
+    estado.materias.push(m);
+    abrirENomear(m);
   });
-
   $("limpar-exemplo").addEventListener("click", () => {
     estado.materias = [materiaNova()];
+    abertas.clear();
+    abrirENomear(estado.materias[0]);
+  });
+  $("carregar-boletim").addEventListener("click", () => {
+    estado.materias = deModelo(SEMENTE.materias);
+    estado.semente = SEMENTE.versao;
+    abrirPoucas();
     desenhar(); mudou();
-    $("mn-" + estado.materias[0].id)?.select();
+  });
+  $("manter-atual").addEventListener("click", () => {
+    estado.semente = SEMENTE.versao;
+    desenhar(); mudou();
   });
 
   // ---------- início ----------
   const local = lerLocal();
-  estado = valido(local) ? { exemplo: false, materias: local.materias } : exemplo();
+  if (valido(local)) estado = deSalvo(local);
+  else if (SEMENTE) estado = { exemplo: false, semente: SEMENTE.versao, materias: deModelo(SEMENTE.materias) };
+  else estado = { exemplo: true, semente: null, materias: deModelo(EXEMPLO) };
+  const inicio = valido(local) ? "ok" : SEMENTE ? "boletim" : "exemplo";
+  abrirPoucas();
   desenhar();
-  setStatus(estado.exemplo ? "exemplo" : "ok");
+  setStatus(inicio);
 
   (async () => {
     const doc = await conectarConta();
@@ -566,19 +613,20 @@
       const dados = snap.exists ? snap.data() : null;
       if (valido(dados)) {
         // Só troca a tela se a pessoa ainda não começou a mexer neste aparelho.
-        if (!timer) {
-          estado = { exemplo: false, materias: dados.materias };
+        if (!mexeu) {
+          estado = deSalvo(dados);
+          abrirPoucas();
           desenhar();
         }
-        setStatus("ok");
-      } else if (!estado.exemplo) {
+        setStatus(pendente ? "salvando" : "ok");
+      } else if (valido(local) && !pendente) {
         salvar(); // leva o que já estava neste navegador para a conta
-      } else {
-        setStatus("exemplo");
+      } else if (!pendente) {
+        setStatus(inicio);
       }
     } catch {
       store = null;
-      setStatus(estado.exemplo ? "exemplo" : "ok");
+      if (!pendente) setStatus(inicio);
     }
   })();
 })();
