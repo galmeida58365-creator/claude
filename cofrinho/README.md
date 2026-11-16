@@ -14,6 +14,7 @@ App para juntar dinheiro para comprar uma coisa (por exemplo, um Nintendo Switch
 - **Plano**: com uma data, mostra quanto guardar por semana, por mês e por dia. Depois de algumas semanas, mostra seu ritmo médio e o mês em que você chega lá. O **E se eu guardar…** simula: "guardando R$ 100 por mês, chego lá em…".
 - **Gráfico** de como o cofrinho encheu, com a linha da meta.
 - **Meta batida**: quando chega no preço, aparece o botão para ir comprar. Depois, **Já comprei!** guarda a meta em "Já comprei".
+- **Ligado ao Caixa do Mês**: o que você põe em "Guardar dinheiro" no Caixa do Mês aparece no topo do Cofrinho como dinheiro "para distribuir". Toque em **Distribuir**, escolha a meta e quanto vai para ela (tudo, metade ou outro valor). Dentro de uma meta também aparece o botão **Colocar aqui**. Veja como ligar abaixo.
 - **Backup** em texto ou arquivo, e **sincronização** entre celular e computador usando o mesmo Firebase do Caixa do Mês (mesmo código e mesma conta).
 
 ## Como usar
@@ -32,6 +33,15 @@ Se você já ligou a sincronização no Caixa do Mês, é só repetir no Cofrinh
 Se ainda não tem, siga a parte 3 do [PASSO-A-PASSO.md](../PASSO-A-PASSO.md) (é grátis) e use **Criar conta** no primeiro aparelho.
 
 As metas ficam em `usuarios/<id da conta>/cofrinho/<id da meta>`. Quando a mesma meta muda nos dois aparelhos, vale a alteração mais recente. Diferente do Caixa do Mês, aqui tanto faz a ordem: ao entrar, as metas do aparelho e as da nuvem são juntadas.
+
+## Ligar com o Caixa do Mês
+
+O Cofrinho lê o valor de **Guardar dinheiro** de cada mês do Caixa do Mês. Ele só lê: não muda nada no Caixa do Mês.
+
+- **No celular**: os dois apps precisam estar com a **sincronização ligada na mesma conta** (mesmo código `firebaseConfig`, mesmo e-mail e senha). O Caixa do Mês manda o mês para a nuvem e o Cofrinho busca de lá ao abrir, ao voltar para ele e a cada 30 segundos.
+- **No computador**: se os dois `index.html` estiverem abertos no mesmo navegador, o Cofrinho já lê o Caixa do Mês direto, mesmo sem sincronização.
+
+O painel **Ligar com o Caixa do Mês** mostra se está ligado. Entram os meses desde que você criou a primeira meta até o mês atual (meses futuros não contam). O que já foi colocado nas metas é descontado: se você mudar o valor no Caixa do Mês, o que falta distribuir se ajusta. Apagar no histórico um lançamento que veio do Caixa devolve o valor para "distribuir".
 
 ## Gerar o APK de novo
 

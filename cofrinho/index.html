@@ -140,6 +140,28 @@ a { color: var(--accent); }
 
 .secao-titulo { font-size: 1rem; color: var(--muted); font-weight: 600; margin-top: 6px; }
 
+/* ---------- dinheiro vindo do Caixa do Mês ---------- */
+.caixa { display: grid; gap: 12px; border-color: var(--ouro); }
+.caixa-cab { display: flex; align-items: center; gap: 8px; font-size: .78rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.caixa-cab::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--ouro); }
+.caixa-linha { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line); }
+.caixa-linha:first-of-type { border-top: 0; padding-top: 0; }
+.caixa-mes { font-weight: 600; }
+.caixa-valor { font-size: 1.05rem; }
+.caixa-valor b { font-family: var(--f-num); font-weight: 500; font-size: 1.3rem; }
+.caixa-ok { color: var(--pos); font-weight: 600; }
+.dica-caixa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; background: var(--surface-2); border: 1px dashed var(--ouro); border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: .9rem; }
+.dica-caixa b { font-family: var(--f-num); font-weight: 500; }
+.d-metas { display: grid; gap: 8px; }
+.d-meta { display: grid; grid-template-columns: auto 48px 1fr; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; cursor: pointer; }
+.d-meta:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.d-meta input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
+.d-meta .foto { width: 48px; border-radius: 10px; }
+.d-meta .foto .letra { font-size: 1.2rem; }
+.d-meta b { display: block; line-height: 1.25; overflow-wrap: anywhere; }
+.d-meta small { color: var(--muted); }
+.tag-caixa { display: inline-block; font-size: .7rem; font-weight: 700; color: var(--muted); border: 1px solid var(--ouro); border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: 1px; }
+
 /* ---------- painéis (sincronizar, backup) ---------- */
 details.painel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
 details.painel > summary { cursor: pointer; padding: 14px 18px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -293,6 +315,12 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
       <button class="btn primario" id="nova-vazio" type="button">+ Criar minha primeira meta</button>
     </div>
 
+    <div class="card caixa" id="caixa" hidden>
+      <p class="caixa-cab">Do Caixa do Mês</p>
+      <div id="caixa-linhas"></div>
+      <p class="mudo pequeno" id="caixa-nota"></p>
+    </div>
+
     <div class="lista-cab" id="lista-cab" hidden>
       <h2>Minhas metas</h2>
       <button class="btn primario" id="nova" type="button">+ Nova meta</button>
@@ -301,6 +329,15 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
 
     <h3 class="secao-titulo" id="conquistas-titulo" hidden>Já comprei</h3>
     <div class="grade" id="conquistas"></div>
+
+    <details class="painel" id="ligar">
+      <summary>Ligar com o Caixa do Mês</summary>
+      <div class="painel-corpo">
+        <p class="nota">O valor que você põe em <strong>Guardar dinheiro</strong> no Caixa do Mês aparece aqui no topo, para você escolher em qual meta colocar. O Cofrinho só lê esse valor: não muda nada no Caixa do Mês.</p>
+        <p id="ligar-estado"></p>
+        <button class="btn" id="ligar-abrir-sync" type="button" style="justify-self:start" hidden>Abrir a sincronização</button>
+      </div>
+    </details>
 
     <details class="painel" id="sync">
       <summary>Sincronizar celular e computador</summary>
@@ -392,6 +429,10 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
     <div class="colunas">
       <div class="card">
         <h3>Guardar dinheiro</h3>
+        <div class="dica-caixa" id="v-caixa" hidden>
+          <span id="v-caixa-txt"></span>
+          <button class="btn primario" id="v-caixa-btn" type="button">Colocar aqui</button>
+        </div>
         <label class="valor-grande"><span>R$</span><input id="v-valor" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-label="Valor"></label>
         <div class="chips" id="v-chips">
           <button class="chip" type="button" data-v="1000">+10</button>
@@ -484,6 +525,24 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
   </form>
 </dialog>
 
+<!-- ===== distribuir o dinheiro do Caixa do Mês ===== -->
+<dialog id="dlg-dist">
+  <form class="dlg" id="d-form" method="dialog" novalidate>
+    <h2 id="d-titulo">Distribuir</h2>
+    <p class="mudo" id="d-sub"></p>
+    <div class="campo"><span>Em qual meta?</span><div class="d-metas" id="d-metas"></div></div>
+    <div class="campo"><span>Quanto</span>
+      <label class="valor-grande"><span>R$</span><input id="d-valor" type="text" inputmode="decimal" autocomplete="off" aria-label="Valor"></label>
+      <div class="chips" style="margin:6px 0 0"><button class="chip" type="button" data-p="1">tudo</button><button class="chip" type="button" data-p="0.5">metade</button></div>
+    </div>
+    <p class="msg" id="d-msg" role="status"></p>
+    <div class="dlg-botoes">
+      <button class="btn" id="d-cancelar" type="button">Cancelar</button>
+      <button class="btn primario" id="d-ok" type="button">Colocar na meta</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="toast" id="toast" hidden role="status"><span id="toast-txt"></span><button id="toast-btn" type="button"></button></div>
 
 <script>
@@ -571,7 +630,12 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
     const movsBrutos = Array.isArray(d.movs) ? d.movs : d.movs && typeof d.movs === "object" ? Object.values(d.movs) : [];
     const movs = movsBrutos
       .filter((m) => m && typeof m === "object" && Number.isFinite(Number(m.valor)) && Number(m.valor) !== 0)
-      .map((m) => ({ id: String(m.id || novoId()), valor: Math.round(Number(m.valor)), data: RE_DATA.test(m.data) ? m.data : hojeISO(), nota: String(m.nota || "").slice(0, 80), criado: Number(m.criado) || 0 }));
+      .map((m) => {
+        const mov = { id: String(m.id || novoId()), valor: Math.round(Number(m.valor)), data: RE_DATA.test(m.data) ? m.data : hojeISO(), nota: String(m.nota || "").slice(0, 80), criado: Number(m.criado) || 0 };
+        // origem "caixa:AAAA-MM": dinheiro que veio do "Guardar dinheiro" daquele mês no Caixa do Mês.
+        if (/^caixa:\d{4}-\d{2}$/.test(m.origem)) mov.origem = m.origem;
+        return mov;
+      });
     return {
       id: String(d.id || id),
       nome: String(d.nome || "").slice(0, 90),
@@ -730,6 +794,7 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
     $("metas").innerHTML = ativas.map(cartaoMeta).join("");
     $("conquistas-titulo").hidden = feitas.length === 0;
     $("conquistas").innerHTML = feitas.map(cartaoMeta).join("");
+    renderCaixa();
   }
   for (const id of ["metas", "conquistas"]) {
     $(id).addEventListener("click", (e) => {
@@ -761,6 +826,7 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
     $("m-comprada").hidden = !meta.comprada;
 
     renderPlano(meta, c);
+    renderDicaCaixa(meta);
     renderSimulador();
     renderHistorico(meta);
     renderGrafico(meta);
@@ -834,7 +900,7 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
     $("h-vazio").hidden = lista.length > 0;
     $("historico").innerHTML = lista.map((m) => `<li>
       <span class="desc"><span class="data">${esc(dataCurta(m.data))}</span>
-      <span class="nota">${m.nota ? esc(m.nota) : `<span class="mudo">${m.valor > 0 ? "Guardei" : "Tirei"}</span>`}</span></span>
+      <span class="nota">${m.nota ? esc(m.nota) : `<span class="mudo">${m.valor > 0 ? "Guardei" : "Tirei"}</span>`}${m.origem ? '<span class="tag-caixa">CAIXA</span>' : ""}</span></span>
       <span class="v ${m.valor > 0 ? "mais" : "menos"}">${m.valor > 0 ? "+" : "−"}${brl(Math.abs(m.valor))}</span>
       <button class="x" type="button" data-mov="${esc(m.id)}" aria-label="Apagar este lançamento">×</button>
     </li>`).join("");
@@ -1200,6 +1266,167 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
     abrirDialogo(null, link);
   };
 
+  // ---------- ligação com o Caixa do Mês ----------
+  // O Caixa do Mês guarda cada mês com { guardar: { valor, feito }, atualizado }.
+  // Ele chega aqui pela conta do Firebase (usuarios/<id>/meses) ou, no computador, pelo mesmo navegador
+  // (as páginas abertas como arquivo dividem o mesmo armazenamento). O Cofrinho só lê.
+  const RE_MES = /^\d{4}-\d{2}$/;
+  const PREFIXO_CAIXA = "caixa-do-mes:";
+  const CHAVE_CAIXA = PREFIXO + "caixa";
+  const mesAtual = () => hojeISO().slice(0, 7);
+  function nomeMes(m) {
+    const [a, mm] = m.split("-").map(Number);
+    const t = new Date(a, mm - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  const soMes = (m) => { const [a, mm] = m.split("-").map(Number); return new Date(a, mm - 1, 1).toLocaleDateString("pt-BR", { month: "long" }); };
+
+  let caixa = { nuvem: {}, local: {}, hora: 0 };
+  try {
+    const j = JSON.parse(localStorage.getItem(CHAVE_CAIXA) || "null");
+    if (j && j.meses && typeof j.meses === "object") { caixa.nuvem = j.meses; caixa.hora = Number(j.hora) || 0; }
+  } catch { /* sem cópia guardada */ }
+  function gravarCaixa() {
+    try { localStorage.setItem(CHAVE_CAIXA, JSON.stringify({ meses: caixa.nuvem, hora: caixa.hora })); } catch { /* só na memória */ }
+  }
+  function guardarDoMes(d) {
+    if (!d || typeof d !== "object" || d.exemplo) return null;
+    return { valor: Math.max(0, Math.round(Number(d.guardar && d.guardar.valor) || 0)), atualizado: Number(d.atualizado) || 0 };
+  }
+  function lerCaixaLocal() {
+    const out = {};
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        const m = k && k.startsWith(PREFIXO_CAIXA) ? k.slice(PREFIXO_CAIXA.length) : "";
+        if (!RE_MES.test(m)) continue;
+        try { const g = guardarDoMes(JSON.parse(localStorage.getItem(k))); if (g) out[m] = g; } catch { /* mês corrompido */ }
+      }
+    } catch { /* sem armazenamento */ }
+    caixa.local = out;
+  }
+  function mesesCaixa() {
+    const out = { ...caixa.nuvem };
+    for (const [m, g] of Object.entries(caixa.local)) if (!out[m] || g.atualizado >= out[m].atualizado) out[m] = g;
+    return out;
+  }
+  const caixaLigado = () => Object.keys(caixa.nuvem).length > 0 || Object.keys(caixa.local).length > 0;
+  function usadoNoMes(m) {
+    let s = 0;
+    for (const meta of visiveis()) for (const mv of meta.movs) if (mv.origem === `caixa:${m}` && mv.valor > 0) s += mv.valor;
+    return s;
+  }
+  // Meses com dinheiro para guardar, do mês em que a primeira meta foi criada até o mês atual.
+  // (Meses mais antigos ficam de fora: o que já estava guardado entra em "Já tenho guardado".)
+  function mesesParaDistribuir() {
+    const atual = mesAtual();
+    const criadas = Object.values(metas).map((m) => m.criada).filter(Boolean);
+    const inicio = criadas.length ? iso(new Date(Math.min(...criadas))).slice(0, 7) : atual;
+    const ms = mesesCaixa();
+    return Object.keys(ms)
+      .filter((m) => m <= atual && m >= inicio && ms[m].valor > 0)
+      .sort().reverse()
+      .map((m) => { const usado = usadoNoMes(m); return { mes: m, valor: ms[m].valor, usado, resta: Math.max(0, ms[m].valor - usado) }; })
+      .filter((x) => x.resta > 0 || x.mes === atual);
+  }
+
+  function renderCaixa() {
+    const lista = mesesParaDistribuir();
+    $("caixa").hidden = lista.length === 0;
+    $("caixa-linhas").innerHTML = lista.map((x) => `<div class="caixa-linha">
+      <div>
+        <p class="caixa-mes">${esc(nomeMes(x.mes))}</p>
+        ${x.resta > 0
+          ? `<p class="caixa-valor"><b>${brl(x.resta)}</b> para distribuir</p>
+             <p class="mudo pequeno">${x.usado ? `de ${brl(x.valor)} · ${brl(x.usado)} já foram para as metas` : `separados em "Guardar dinheiro"`}</p>`
+          : `<p class="caixa-ok">✓ Tudo distribuído (${brl(x.valor)})</p>`}
+      </div>
+      ${x.resta > 0 ? `<button class="btn primario" type="button" data-dist="${x.mes}">Distribuir</button>` : ""}
+    </div>`).join("");
+    $("caixa-nota").textContent = caixa.hora && Object.keys(caixa.nuvem).length
+      ? `Lido da sua conta às ${new Date(caixa.hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}. Mudou no Caixa do Mês? Aparece aqui em instantes.`
+      : "Lido do Caixa do Mês aberto neste navegador.";
+    renderLigacao();
+  }
+  $("caixa-linhas").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-dist]");
+    if (b) abrirDist(b.dataset.dist, null);
+  });
+
+  function renderDicaCaixa(meta) {
+    const x = meta.comprada ? null : mesesParaDistribuir().find((y) => y.resta > 0);
+    $("v-caixa").hidden = !x;
+    if (!x) return;
+    $("v-caixa-txt").innerHTML = `Do Caixa do Mês: <b>${brl(x.resta)}</b> de ${esc(soMes(x.mes))} para distribuir.`;
+    $("v-caixa-btn").onclick = () => abrirDist(x.mes, meta.id);
+  }
+
+  function renderLigacao() {
+    let t;
+    const nuvem = Object.keys(caixa.nuvem).length > 0;
+    if (sessao && nuvem) t = `<span class="caixa-ok">✓ Ligado</span> pela sua conta (${esc(sessao.email)}).`;
+    else if (Object.keys(caixa.local).length) t = `<span class="caixa-ok">✓ Ligado</span> pelo Caixa do Mês aberto neste navegador. No celular, ligue a sincronização nos dois apps com o mesmo e-mail.`;
+    else if (sessao) t = `Conectado como ${esc(sessao.email)}, mas o Caixa do Mês desta conta ainda não mandou nada para a nuvem. No Caixa do Mês, abra <strong>Sincronizar celular e computador</strong> e entre com o <strong>mesmo e-mail</strong>.`;
+    else t = `Ainda não ligado. Ligue a <strong>sincronização</strong> no Caixa do Mês e aqui no Cofrinho, com o <strong>mesmo código</strong> do Firebase e o <strong>mesmo e-mail e senha</strong>.`;
+    $("ligar-estado").innerHTML = t;
+    $("ligar-abrir-sync").hidden = !!sessao;
+  }
+  $("ligar-abrir-sync").addEventListener("click", () => {
+    $("sync").open = true;
+    $("sync").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  // ---------- janela de distribuir ----------
+  let distMes = null;
+  function restaDoMes(m) { const x = mesesParaDistribuir().find((y) => y.mes === m); return x ? x.resta : 0; }
+  function abrirDist(m, metaId) {
+    const resta = restaDoMes(m);
+    if (!resta) return;
+    distMes = m;
+    const ativas = visiveis().filter((x) => !x.comprada).sort((a, b) => a.criada - b.criada);
+    $("d-titulo").textContent = `Distribuir ${soMes(m)}`;
+    $("d-sub").textContent = `${brl(resta)} do Caixa do Mês ainda sem destino.`;
+    $("d-msg").textContent = ativas.length ? "" : "Crie uma meta primeiro, para ter onde colocar o dinheiro.";
+    const escolhida = metaId && ativas.some((x) => x.id === metaId) ? metaId : ativas[0] && ativas[0].id;
+    $("d-metas").innerHTML = ativas.map((x) => {
+      const c = contas(x);
+      return `<label class="d-meta"><input type="radio" name="d-meta" value="${esc(x.id)}"${x.id === escolhida ? " checked" : ""}>
+        <span class="foto">${fotoHTML(x)}</span>
+        <span><b>${esc(x.nome || "Sem nome")}</b><small>${c.chegou ? "meta batida" : `faltam ${brl(c.faltam)}`}</small></span></label>`;
+    }).join("");
+    $("d-valor").value = paraTexto(resta);
+    $("d-ok").disabled = !ativas.length;
+    const dlg = $("dlg-dist");
+    if (typeof dlg.showModal === "function") { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute("open", "");
+  }
+  function fecharDist() {
+    const dlg = $("dlg-dist");
+    if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open");
+  }
+  $("d-cancelar").addEventListener("click", fecharDist);
+  $("d-form").addEventListener("submit", (e) => e.preventDefault());
+  $("dlg-dist").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-p]");
+    if (b && distMes) $("d-valor").value = paraTexto(Math.round(restaDoMes(distMes) * Number(b.dataset.p)));
+  });
+  $("d-ok").addEventListener("click", () => {
+    const m = distMes;
+    const sel = document.querySelector('input[name="d-meta"]:checked');
+    const meta = sel && metas[sel.value];
+    const resta = restaDoMes(m);
+    const v = paraCentavos($("d-valor").value);
+    if (!meta) { $("d-msg").textContent = "Escolha a meta."; return; }
+    if (!v) { $("d-msg").textContent = "Digite quanto vai para essa meta."; return; }
+    if (v > resta) { $("d-msg").textContent = `De ${soMes(m)} só tem ${brl(resta)} para distribuir.`; return; }
+    const antes = contas(meta);
+    meta.movs.push({ id: novoId(), valor: v, data: hojeISO(), nota: `Caixa do Mês · ${soMes(m)}`, criado: Date.now(), origem: `caixa:${m}` });
+    mudou(meta);
+    fecharDist();
+    render();
+    toast(`${brl(v)} foi para ${meta.nome || "a meta"}.`);
+    if (!antes.chegou && contas(meta).chegou) confete();
+  });
+
   // ---------- backup ----------
   const textoBackup = () => JSON.stringify({ app: "cofrinho", versao: 1, gerado: new Date().toISOString(), metas });
   $("bk-gerar").addEventListener("click", () => {
@@ -1335,6 +1562,7 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
       throw e;
     }
   }
+  const urlMesesCaixa = async () => `${FIREBASE.databaseURL.replace(/\/+$/, "")}/usuarios/${sessao.uid}/meses.json?auth=${encodeURIComponent(await token())}`;
   const urlCofrinho = async () => `${FIREBASE.databaseURL.replace(/\/+$/, "")}/usuarios/${sessao.uid}/cofrinho.json?auth=${encodeURIComponent(await token())}`;
 
   function agendarSync() {
@@ -1363,10 +1591,22 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
         if (Object.keys(enviar).length) {
           await chamar(await urlCofrinho(), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(enviar) });
         }
-        if (trouxe) {
-          gravarLocal();
-          const dlgAberto = $("dlg").open;
-          if (!dlgAberto) render();
+        // "Guardar dinheiro" de cada mês do Caixa do Mês da mesma conta.
+        const mesesNuvem = (await chamar(await urlMesesCaixa())) || {};
+        const novoCaixa = {};
+        for (const [m, d] of Object.entries(mesesNuvem)) {
+          if (!RE_MES.test(m)) continue;
+          const g = guardarDoMes(d);
+          if (g) novoCaixa[m] = g;
+        }
+        const caixaMudou = JSON.stringify(novoCaixa) !== JSON.stringify(caixa.nuvem);
+        caixa.nuvem = novoCaixa;
+        caixa.hora = Date.now();
+        gravarCaixa();
+        if (trouxe) gravarLocal();
+        if (!$("dlg").open && !$("dlg-dist").open) {
+          if (trouxe || caixaMudou) render();
+          else if (!aberta) renderCaixa();
         }
         setSync("ok", msgOk);
       } catch (e) {
@@ -1389,12 +1629,17 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
     $("sync-dentro").hidden = !sessao;
     if (sessao) $("sync-quem").textContent = sessao.email;
     mostrarStatus();
+    renderLigacao();
   }
   function sair(msg) {
     sessao = null;
     gravarSessao();
     sync = { estado: "", hora: 0 };
+    caixa.nuvem = {};
+    caixa.hora = 0;
+    gravarCaixa();
     renderSync();
+    render();
     $("sync-msg").textContent = msg || "Você saiu. As metas continuam salvas neste aparelho.";
   }
   async function entrar(criar) {
@@ -1466,10 +1711,16 @@ dialog::backdrop { background: rgb(20 14 10 / .5); }
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") sincronizar(); });
   setInterval(() => { if (document.visibilityState === "visible") sincronizar(); }, 30000);
   // Outra aba do mesmo navegador mudou as metas.
-  window.addEventListener("storage", (e) => { if (e.key === CHAVE_DADOS) { metas = carregarLocal(); if (!$("dlg").open) render(); } });
+  window.addEventListener("storage", (e) => {
+    const quieto = !$("dlg").open && !$("dlg-dist").open;
+    if (e.key === CHAVE_DADOS) { metas = carregarLocal(); if (quieto) render(); }
+    else if (e.key && e.key.startsWith(PREFIXO_CAIXA)) { lerCaixaLocal(); if (quieto) render(); }
+  });
+  window.addEventListener("focus", () => { lerCaixaLocal(); if (!$("dlg").open && !$("dlg-dist").open) render(); });
 
   // ---------- início ----------
   metas = carregarLocal();
+  lerCaixaLocal();
   renderSync();
   render();
   sincronizar();
