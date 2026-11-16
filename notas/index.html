@@ -20,6 +20,12 @@
     --warn-soft: #fcefd9;
     --bad: #b42335;
     --bad-soft: #fbe2e5;
+    --andamento: var(--accent);
+    --chip-bg: var(--accent-soft);
+    --chip-fg: var(--accent);
+    --chip-line: transparent;
+    --chip-ok-bg: var(--ok-soft);
+    --chip-ok-fg: var(--ok);
     --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
     --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   }
@@ -36,6 +42,32 @@
     --accent: #7d9fff; --accent-soft: #1f2b4d;
     --ok: #4cc98a; --ok-soft: #133426; --warn: #f0a94a; --warn-soft: #3a2a12; --bad: #ff7a8a; --bad-soft: #3d1a21;
     color-scheme: dark;
+  }
+
+  /* Tema verde (escolhido na geração do app). Verde cheio = já passou; cinza = ainda falta. */
+  :root[data-cor="verde"] {
+    --bg: #edf4ee; --card: #ffffff; --ink: #14251a; --muted: #55665a; --line: #cddbd1; --field: #f4f8f5;
+    --accent: #1e7d3c; --accent-soft: #dcefe1;
+    --ok: #1e7d3c; --ok-soft: #dcefe1;
+    --andamento: #5d7065;
+    --chip-bg: var(--field); --chip-fg: var(--ink); --chip-line: var(--line);
+    --chip-ok-bg: var(--accent); --chip-ok-fg: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root[data-cor="verde"]:not([data-theme="light"]) {
+      --bg: #0e1611; --card: #152019; --ink: #e4efe7; --muted: #93a698; --line: #27382d; --field: #101a14;
+      --accent: #5fd083; --accent-soft: #17361f;
+      --ok: #5fd083; --ok-soft: #17361f;
+      --andamento: #8fa397;
+      --chip-ok-fg: #0e1611;
+    }
+  }
+  :root[data-cor="verde"][data-theme="dark"] {
+    --bg: #0e1611; --card: #152019; --ink: #e4efe7; --muted: #93a698; --line: #27382d; --field: #101a14;
+    --accent: #5fd083; --accent-soft: #17361f;
+    --ok: #5fd083; --ok-soft: #17361f;
+    --andamento: #8fa397;
+    --chip-ok-fg: #0e1611;
   }
 
   * { box-sizing: border-box; }
@@ -66,11 +98,11 @@
     display: inline-flex; align-items: baseline; gap: 4px;
     padding: 3px 10px; border-radius: 999px;
     font-size: 0.8rem; font-weight: 600; white-space: nowrap;
-    background: var(--accent-soft); color: var(--accent);
+    background: var(--chip-bg); color: var(--chip-fg); border: 1px solid var(--chip-line);
   }
-  .chip.ok { background: var(--ok-soft); color: var(--ok); }
-  .chip.warn { background: var(--warn-soft); color: var(--warn); }
-  .chip.bad { background: var(--bad-soft); color: var(--bad); }
+  .chip.ok { background: var(--chip-ok-bg); color: var(--chip-ok-fg); border-color: transparent; }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .chip.bad { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
   .chip.neutro { background: var(--field); color: var(--muted); border: 1px solid var(--line); }
   .status { font-size: 0.8rem; color: var(--muted); }
 
@@ -128,6 +160,11 @@
 
   .tabela { display: grid; gap: 6px; }
   .linha { display: grid; grid-template-columns: minmax(0, 1fr) 60px 72px 34px; gap: 6px; align-items: center; }
+  @media (max-width: 480px) {
+    .linha { grid-template-columns: minmax(0, 1fr) 50px 58px 30px; gap: 5px; }
+    .linha .btn-icone { width: 30px; }
+    .linha input.campo { font-size: 0.9rem; padding: 7px 6px; }
+  }
   .cab { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .cab span:nth-child(2), .cab span:nth-child(3) { text-align: center; }
   .linha .vale, .linha .nota { text-align: center; }
@@ -154,7 +191,7 @@
 
   .regua { display: grid; gap: 4px; }
   .trilho { position: relative; height: 10px; border-radius: 999px; background: var(--line); }
-  .trilho i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); transition: width .25s ease; }
+  .trilho i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--andamento); transition: width .25s ease; }
   .trilho b { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--ink); }
   .ficha[data-s="garantido"] .trilho i, .ficha[data-s="aprovado"] .trilho i { background: var(--ok); }
   .ficha[data-n="dificil"] .trilho i { background: var(--warn); }
@@ -223,6 +260,7 @@
 
   // Matérias que já vêm prontas (colocadas na hora de gerar o app). Sem elas, aparece um exemplo.
   const SEMENTE = window.NOTAS_INICIAIS && Array.isArray(window.NOTAS_INICIAIS.materias) ? window.NOTAS_INICIAIS : null;
+  if (SEMENTE && SEMENTE.tema) document.documentElement.dataset.cor = SEMENTE.tema;
 
   function deModelo(lista) {
     return lista.map((m) => ({

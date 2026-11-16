@@ -5,6 +5,7 @@
 #
 # Para gerar uma cópia separada do app (outro nome, instalável ao lado do original), use variáveis:
 #   NOME_APP="Quanto Falta R" PACOTE=br.quantofalta.r SAIDA=QuantoFaltaR.apk BOLETIM=../meu-boletim-r.json ./build.sh
+# Para o ícone e o fundo verdes, junte RES_EXTRA=res-verde (e "tema": "verde" no arquivo do boletim).
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -16,6 +17,7 @@ NOME_APP=${NOME_APP:-Quanto Falta}        # nome que aparece na tela do celular
 PACOTE=${PACOTE:-br.quantofalta.app}      # identificador do app; outro identificador = outro app instalado
 SAIDA=${SAIDA:-QuantoFalta.apk}           # nome do arquivo gerado em dist/
 BOLETIM=${BOLETIM:-../meu-boletim.json}   # matérias que já vêm prontas (particular, fora do repositório)
+RES_EXTRA=${RES_EXTRA:-}                  # pasta com recursos que substituem os de res/ (ex.: res-verde)
 
 COMUM=../../android
 FER=.ferramentas
@@ -49,7 +51,9 @@ else
 fi
 python3 "$COMUM/embutir_fontes.py" "$OUT/pagina.html" "$OUT/assets"
 
-"$FER/aapt2" compile --dir res -o "$OUT/res/"
+cp -r res "$OUT/res-fonte"
+if [ -n "$RES_EXTRA" ]; then cp -r "$RES_EXTRA"/. "$OUT/res-fonte/"; fi
+"$FER/aapt2" compile --dir "$OUT/res-fonte" -o "$OUT/res/"
 sed "s/android:label=\"[^\"]*\"/android:label=\"$NOME_APP\"/" AndroidManifest.xml > "$OUT/AndroidManifest.xml"
 "$FER/aapt2" link -o "$OUT/base.apk" -I "$FER/android.jar" \
   --manifest "$OUT/AndroidManifest.xml" --rename-manifest-package "$PACOTE" \
