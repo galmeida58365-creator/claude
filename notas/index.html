@@ -148,7 +148,6 @@
   .grande small { font-size: 0.4em; font-weight: 600; color: var(--muted); letter-spacing: 0; }
   .grande.palavra { font-size: clamp(1.9rem, 6vw, 2.3rem); }
   .ficha[data-s="garantido"] .grande, .ficha[data-s="aprovado"] .grande { color: var(--ok); }
-  .ficha[data-s="impossivel"] .grande, .ficha[data-s="reprovado"] .grande { color: var(--bad); }
   .ficha[data-s="precisa"][data-n="dificil"] .grande { color: var(--warn); }
   .explica { margin: 0; font-size: 0.88rem; color: var(--muted); }
   .explica b { color: var(--ink); font-weight: 600; }
@@ -159,7 +158,6 @@
   .trilho b { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--ink); }
   .ficha[data-s="garantido"] .trilho i, .ficha[data-s="aprovado"] .trilho i { background: var(--ok); }
   .ficha[data-n="dificil"] .trilho i { background: var(--warn); }
-  .ficha[data-s="impossivel"] .trilho i, .ficha[data-s="reprovado"] .trilho i { background: var(--bad); }
   .escala { display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
   .vazio {
@@ -208,7 +206,8 @@
   <section class="como">
     <h2>Como a conta é feita</h2>
     <p>Cada avaliação vale um número de pontos. O app soma os pontos que você já tirou e mostra quanto falta para chegar ao mínimo da matéria. Por exemplo: três trimestres valendo 30, 30 e 40 pontos, com mínimo de 60 para passar.</p>
-    <p>Deixe a nota em branco no que ainda não aconteceu. Toque numa matéria para abrir e mudar as notas.</p>
+    <p>Deixe a nota em branco no que ainda não aconteceu. Se o trimestre ainda está em andamento, coloque os pontos que você já tem e vá atualizando: o app mostra só quanto falta.</p>
+    <p>Toque numa matéria para abrir e mudar as notas.</p>
     <p>Pode usar vírgula ou ponto: <code>18,5</code> ou <code>18.5</code>.</p>
   </section>
 </div>
@@ -272,13 +271,13 @@
     const r = { minimo, total, feito, valeFalta, pendentes, invalidos };
     if (minimo === null) return { ...r, s: "regra" };
     if (total === 0) return { ...r, s: "vazio" };
-    if (!pendentes.length) return { ...r, s: feito + 1e-9 >= minimo ? "aprovado" : "reprovado" };
+    if (feito + 1e-9 >= minimo) return { ...r, s: pendentes.length ? "garantido" : "aprovado" };
+    // Abaixo do mínimo o app nunca dá a matéria por perdida: a nota lançada pode ser parcial
+    // (pontos que a pessoa tem até agora), então mostra só quanto falta.
     const falta = minimo - feito;
-    if (falta <= 1e-9) return { ...r, falta: 0, s: "garantido" };
-    if (falta > valeFalta + 1e-9) return { ...r, falta, s: "impossivel" };
-    const fr = falta / valeFalta;
-    const n = fr > 0.85 ? "dificil" : fr > minimo / total + 1e-9 ? "atencao" : "tranquilo";
-    return { ...r, falta, s: "precisa", n };
+    const cabe = pendentes.length > 0 && falta <= valeFalta + 1e-9;
+    const n = pendentes.length && falta / valeFalta > 0.85 ? "dificil" : "";
+    return { ...r, falta, cabe, s: "precisa", n };
   }
 
   // Versão antiga do app guardava peso e média; converte para pontos sem mudar o resultado.
@@ -404,10 +403,8 @@
     const f = fmt;
     switch (r.s) {
       case "garantido": return `<span class="chip ok">Já passou</span>`;
-      case "aprovado": return `<span class="chip ok num">Aprovado · ${f(r.feito)}</span>`;
-      case "impossivel": return `<span class="chip bad">Não dá mais</span>`;
-      case "reprovado": return `<span class="chip bad num">Reprovado · ${f(r.feito)}</span>`;
-      case "precisa": return `<span class="chip ${r.n === "dificil" ? "warn" : ""} num">Faltam ${f(arredCima(r.falta))} de ${f(r.valeFalta)}</span>`;
+      case "aprovado": return `<span class="chip ok num">Já passou · ${f(r.feito)}</span>`;
+      case "precisa": return `<span class="chip ${r.n === "dificil" ? "warn" : ""} num">Faltam ${f(arredCima(r.falta))}${r.pendentes.length ? " de " + f(r.valeFalta) : ""}</span>`;
       default: return `<span class="chip neutro">Incompleta</span>`;
     }
   }
@@ -431,22 +428,21 @@
         return `<span class="rotulo">Situação</span>
           <div class="grande palavra">Já passou</div>${regua()}
           <p class="explica">Você já tem <b class="num">${f(r.feito)}</b> pontos e o mínimo é ${f(r.minimo)}. O que falta só aumenta a nota.</p>`;
-      case "impossivel":
-        return `<span class="rotulo">Situação</span>
-          <div class="grande palavra">Não dá mais</div>${regua()}
-          <p class="explica">Faltam <b class="num">${f(arredCima(r.falta))}</b> pontos e só restam <b class="num">${f(r.valeFalta)}</b> em jogo. Com nota máxima em tudo você chega a ${f(r.feito + r.valeFalta)}. Veja como funciona a recuperação.</p>`;
       case "aprovado":
-        return `<span class="rotulo">Nota final</span>
+        return `<span class="rotulo">Você tem</span>
           <div class="grande">${f(r.feito)}<small> / ${f(r.total)}</small></div>${regua()}
-          <p class="explica"><b>Aprovado.</b> O mínimo era ${f(r.minimo)}.</p>`;
-      case "reprovado":
-        return `<span class="rotulo">Nota final</span>
-          <div class="grande">${f(r.feito)}<small> / ${f(r.total)}</small></div>${regua()}
-          <p class="explica">Faltaram <b class="num">${f(arredCima(r.minimo - r.feito))}</b> pontos para o mínimo de ${f(r.minimo)}. Veja como funciona a recuperação.</p>`;
-      default:
-        return `<span class="rotulo">Precisa tirar</span>
-          <div class="grande">${f(arredCima(r.falta))}<small> / ${f(r.valeFalta)}</small></div>${regua()}
-          <p class="explica">Pontos que você precisa ${onde()} para chegar a ${f(r.minimo)}.</p>`;
+          <p class="explica"><b>Já passou.</b> O mínimo é ${f(r.minimo)}.</p>`;
+      default: {
+        const brancos = r.pendentes.length > 0;
+        const explica = !brancos
+          ? `Você tem <b class="num">${f(r.feito)}</b> pontos e o mínimo é ${f(r.minimo)}. Vá atualizando a nota conforme ganhar mais pontos.`
+          : r.cabe
+            ? `Pontos que você precisa ${onde()} para chegar a ${f(r.minimo)}.`
+            : `É mais do que os <b class="num">${f(r.valeFalta)}</b> pontos das avaliações em branco. Veja como funciona a recuperação.`;
+        return `<span class="rotulo">Falta para passar</span>
+          <div class="grande">${f(arredCima(r.falta))}<small>${brancos ? " / " + f(r.valeFalta) : " pontos"}</small></div>${regua()}
+          <p class="explica">${explica}</p>`;
+      }
     }
   }
 
@@ -468,18 +464,16 @@
   }
 
   function atualizarResumo() {
-    const c = { ok: 0, precisa: 0, risco: 0 };
+    const c = { ok: 0, precisa: 0 };
     for (const m of estado.materias) {
       const s = calcular(m).s;
       if (s === "garantido" || s === "aprovado") c.ok++;
-      else if (s === "impossivel" || s === "reprovado") c.risco++;
       else if (s === "precisa") c.precisa++;
     }
     const total = estado.materias.length;
     const partes = [`<span class="chip neutro num">${total} ${total === 1 ? "matéria" : "matérias"}</span>`];
     if (c.ok) partes.push(`<span class="chip ok num">${c.ok} já ${c.ok === 1 ? "passou" : "passaram"}</span>`);
     if (c.precisa) partes.push(`<span class="chip num">${c.precisa} ainda ${c.precisa === 1 ? "precisa" : "precisam"} de pontos</span>`);
-    if (c.risco) partes.push(`<span class="chip bad num">${c.risco} sem chance pelo mínimo</span>`);
     $("resumo").innerHTML = partes.join("");
   }
 
