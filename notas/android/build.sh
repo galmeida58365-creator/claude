@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
-# Gera dist/QuantoFalta.apk a partir de notas/index.html, sem Android Studio.
+# Gera dist/QuantoFalta.apk (ou o nome em SAIDA) a partir de notas/index.html, sem Android Studio.
 # Reaproveita os ajudantes do app Caixa do Mês (pasta android/ na raiz do repositório).
 # Precisa de: Java (JDK 17+), python3, curl, unzip, zip.
+#
+# Para gerar uma cópia separada do app (outro nome, instalável ao lado do original), use variáveis:
+#   NOME_APP="Quanto Falta R" PACOTE=br.quantofalta.r SAIDA=QuantoFaltaR.apk BOLETIM=../meu-boletim-r.json ./build.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 
 VERSAO_CODIGO=3
 VERSAO_NOME=1.2
 SENHA=quantofalta   # senha da chave de assinatura em quanto-falta.p12
+
+NOME_APP=${NOME_APP:-Quanto Falta}        # nome que aparece na tela do celular
+PACOTE=${PACOTE:-br.quantofalta.app}      # identificador do app; outro identificador = outro app instalado
+SAIDA=${SAIDA:-QuantoFalta.apk}           # nome do arquivo gerado em dist/
+BOLETIM=${BOLETIM:-../meu-boletim.json}   # matérias que já vêm prontas (particular, fora do repositório)
 
 COMUM=../../android
 FER=.ferramentas
@@ -33,8 +41,7 @@ fi
 rm -rf "$OUT"
 mkdir -p "$OUT/res" "$OUT/gen" "$OUT/classes" "$OUT/assets" "$OUT/assina"
 
-# Se existir notas/meu-boletim.json (particular, fora do repositório), o app já abre com essas matérias.
-BOLETIM=../meu-boletim.json
+# Se o arquivo do boletim existir, o app já abre com essas matérias.
 if [ -f "$BOLETIM" ]; then
   python3 montar_pagina.py ../index.html "$OUT/pagina.html" "$BOLETIM"
 else
@@ -43,8 +50,10 @@ fi
 python3 "$COMUM/embutir_fontes.py" "$OUT/pagina.html" "$OUT/assets"
 
 "$FER/aapt2" compile --dir res -o "$OUT/res/"
+sed "s/android:label=\"[^\"]*\"/android:label=\"$NOME_APP\"/" AndroidManifest.xml > "$OUT/AndroidManifest.xml"
 "$FER/aapt2" link -o "$OUT/base.apk" -I "$FER/android.jar" \
-  --manifest AndroidManifest.xml --java "$OUT/gen" -A "$OUT/assets" \
+  --manifest "$OUT/AndroidManifest.xml" --rename-manifest-package "$PACOTE" \
+  --java "$OUT/gen" -A "$OUT/assets" \
   --min-sdk-version 24 --target-sdk-version 34 \
   --version-code "$VERSAO_CODIGO" --version-name "$VERSAO_NOME" \
   "$OUT"/res/*.flat
@@ -57,6 +66,6 @@ java -cp "$FER/dx.jar" com.android.dx.command.Main --dex --min-sdk-version=24 \
 python3 "$COMUM/alinhar.py" "$OUT/base.apk" "$OUT/alinhado.apk"
 
 javac -nowarn -cp "$FER/bundletool.jar" -d "$OUT/assina" "$COMUM/Assina.java"
-java -cp "$FER/bundletool.jar:$OUT/assina" Assina quanto-falta.p12 "$SENHA" "$OUT/alinhado.apk" "$DIST/QuantoFalta.apk"
-python3 "$COMUM/alinhar.py" --conferir "$DIST/QuantoFalta.apk"
-echo "Pronto: dist/QuantoFalta.apk"
+java -cp "$FER/bundletool.jar:$OUT/assina" Assina quanto-falta.p12 "$SENHA" "$OUT/alinhado.apk" "$DIST/$SAIDA"
+python3 "$COMUM/alinhar.py" --conferir "$DIST/$SAIDA"
+echo "Pronto: dist/$SAIDA ($NOME_APP, $PACOTE)"
