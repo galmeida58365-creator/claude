@@ -2,3 +2,9 @@
 *.p12
 *.jks
 *.keystore
+
+# Arquivos gerados pelos scripts de build.
+.ferramentas/
+android/build/
+cofrinho/android/build/
+desktop/build/

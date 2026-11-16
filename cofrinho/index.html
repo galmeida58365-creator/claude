@@ -1,0 +1,1479 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cofrinho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Cofrinho: uma meta de compra por cartão; na meta aberta, o quanto já foi guardado manda na tela. */
+:root {
+  --bg: #F6F1EA;
+  --surface: #FFFFFF;
+  --surface-2: #FBF7F2;
+  --ink: #241A14;
+  --muted: #6E6158;
+  --line: #E6DBCF;
+  --accent: #B5432A;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #F8E3DA;
+  --trilho: #EFE6DC;
+  --pos: #1E7653;
+  --pos-soft: #DDF0E6;
+  --neg: #A8392A;
+  --ouro: #D9A23A;
+  --shadow: 0 1px 2px rgb(36 26 20 / .06), 0 6px 20px rgb(36 26 20 / .06);
+
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15110E; --surface: #1E1915; --surface-2: #241E19; --ink: #F1E9E1; --muted: #A89A8E; --line: #3A312A;
+    --accent: #F08A6C; --accent-ink: #2A0F06; --accent-soft: #3D2219; --trilho: #2E2620;
+    --pos: #5CC79B; --pos-soft: #17352A; --neg: #F2876F; --ouro: #E8B65A;
+    --shadow: 0 1px 2px rgb(0 0 0 / .35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15110E; --surface: #1E1915; --surface-2: #241E19; --ink: #F1E9E1; --muted: #A89A8E; --line: #3A312A;
+  --accent: #F08A6C; --accent-ink: #2A0F06; --accent-soft: #3D2219; --trilho: #2E2620;
+  --pos: #5CC79B; --pos-soft: #17352A; --neg: #F2876F; --ouro: #E8B65A;
+  --shadow: 0 1px 2px rgb(0 0 0 / .35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding-block: max(16px, env(safe-area-inset-top, 0px)) 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid;
+  gap: 18px;
+}
+.pilha { display: grid; gap: 18px; min-width: 0; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+p { margin: 0; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mudo { color: var(--muted); }
+.pequeno { font-size: .85rem; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line); background: var(--surface); border-radius: 10px;
+  padding: 9px 14px; cursor: pointer; font-weight: 600; text-decoration: none; color: var(--ink);
+  min-height: 42px;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primario { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primario:hover { filter: brightness(1.07); }
+.btn.texto { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 6px; min-height: 0; }
+.btn.texto:hover { text-decoration: underline; }
+.btn.perigo { color: var(--neg); }
+.btn.perigo:hover { border-color: var(--neg); }
+.btn:disabled { opacity: .55; cursor: default; filter: none; }
+
+/* ---------- topo ---------- */
+.topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.marca { display: flex; align-items: center; gap: 10px; }
+.marca svg { width: 34px; height: 34px; flex: none; }
+.marca h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -.01em; }
+.status { display: flex; align-items: center; gap: 8px; font-size: .8rem; color: var(--muted); }
+.status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pos); flex: none; }
+.status[data-s="salvando"]::before { background: var(--ouro); }
+.status[data-s="erro"]::before { background: var(--neg); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; box-shadow: var(--shadow); }
+.card > h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; }
+
+/* ---------- lista de metas ---------- */
+.lista-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lista-cab h2 { font-size: 1.2rem; }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 14px; }
+.meta-card {
+  display: grid; grid-template-columns: 72px 1fr; gap: 14px; align-items: center;
+  text-align: left; width: 100%; cursor: pointer; padding: 14px;
+}
+.meta-card:hover { border-color: var(--accent); }
+.meta-card h3 { font-size: 1.02rem; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.meta-card .valores { font-size: .85rem; color: var(--muted); margin-top: 2px; }
+.meta-card .valores strong { color: var(--ink); font-weight: 500; }
+.meta-card .rodape { display: flex; justify-content: space-between; gap: 8px; font-size: .8rem; color: var(--muted); margin-top: 6px; }
+.meta-card.feita .rodape b { color: var(--pos); }
+
+.foto {
+  width: 72px; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #fff;
+  border: 1px solid var(--line); display: grid; place-items: center; position: relative;
+}
+.foto img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.foto .letra { font-family: var(--f-display); font-weight: 700; font-size: 1.6rem; color: var(--accent); background: var(--accent-soft); width: 100%; height: 100%; display: grid; place-items: center; }
+.foto .selo { position: absolute; right: 4px; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; background: var(--pos); color: #fff; display: grid; place-items: center; font-size: .75rem; }
+
+.barra { height: 10px; border-radius: 99px; background: var(--trilho); overflow: hidden; margin-top: 8px; }
+.barra > span { display: block; height: 100%; border-radius: 99px; background: var(--accent); min-width: 0; transition: width .5s ease; }
+.barra.cheia > span { background: var(--pos); }
+
+.vazio { text-align: center; padding: 34px 20px; display: grid; gap: 12px; justify-items: center; }
+.vazio svg { width: 84px; height: 84px; }
+.vazio h2 { font-size: 1.35rem; }
+.vazio p { color: var(--muted); max-width: 42ch; }
+
+.secao-titulo { font-size: 1rem; color: var(--muted); font-weight: 600; margin-top: 6px; }
+
+/* ---------- painéis (sincronizar, backup) ---------- */
+details.painel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+details.painel > summary { cursor: pointer; padding: 14px 18px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+details.painel > summary::-webkit-details-marker { display: none; }
+details.painel > summary::after { content: "+"; font-size: 1.2rem; color: var(--muted); }
+details.painel[open] > summary::after { content: "–"; }
+.painel-corpo { padding: 0 18px 18px; display: grid; gap: 10px; }
+.painel-corpo .nota { font-size: .85rem; color: var(--muted); }
+.linha-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+textarea { width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--surface-2); font: .82rem/1.4 var(--f-num); }
+.msg { font-size: .85rem; color: var(--muted); min-height: 1.2em; }
+
+/* ---------- campos ---------- */
+.campo { display: grid; gap: 4px; }
+.campo > span, .campo > label > span { font-size: .82rem; font-weight: 600; color: var(--muted); }
+.campo small { font-size: .78rem; color: var(--muted); }
+input[type="text"], input[type="email"], input[type="password"], input[type="date"], input[type="url"], select {
+  width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface-2); min-height: 44px;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* ---------- meta aberta ---------- */
+.voltar { justify-self: start; }
+.hero { display: grid; grid-template-columns: 132px 1fr; gap: 18px; align-items: center; }
+.hero .foto { width: 132px; border-radius: 16px; }
+.hero .foto .letra { font-size: 3rem; }
+.hero .loja { font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+.hero h2 { font-size: clamp(1.35rem, 4.6vw, 1.9rem); font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; margin: 2px 0 4px; }
+.hero .preco { color: var(--muted); }
+.hero .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.placar { display: grid; gap: 4px; }
+.placar .topo-placar { display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+.placar .topo-placar > div { min-width: 0; }
+.placar .rotulo { font-size: .8rem; font-weight: 600; color: var(--muted); display: block; }
+.placar .grande { font-family: var(--f-num); font-size: clamp(1.5rem, 6.6vw, 2.6rem); white-space: nowrap; font-weight: 500; line-height: 1.1; letter-spacing: -.02em; }
+.placar .direita { text-align: right; }
+.placar .direita strong { font-family: var(--f-num); font-size: clamp(.95rem, 3.8vw, 1.2rem); font-weight: 500; white-space: nowrap; }
+.placar .barra { height: 16px; margin-top: 12px; }
+.placar .legenda { display: flex; justify-content: space-between; gap: 10px; font-size: .85rem; color: var(--muted); margin-top: 6px; }
+
+.festa { background: var(--pos-soft); border-color: transparent; display: grid; gap: 10px; }
+.festa h3 { font-size: 1.25rem; color: var(--pos); margin: 0; }
+.comprada { background: var(--surface-2); }
+
+.colunas { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+
+.valor-grande { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; background: var(--surface-2); }
+.valor-grande:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.valor-grande span { font-family: var(--f-num); color: var(--muted); font-size: 1.2rem; }
+.valor-grande input { border: 0; background: transparent; font-family: var(--f-num); font-size: 1.6rem; width: 100%; min-width: 0; padding: 6px 0; outline: none; box-shadow: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; cursor: pointer; font-family: var(--f-num); font-size: .85rem; min-height: 36px; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.duas { display: grid; grid-template-columns: 150px 1fr; gap: 8px; }
+.form-botoes { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }
+
+.plano { display: grid; gap: 14px; }
+.plano .bloco { display: grid; gap: 4px; }
+.plano .bloco h4 { margin: 0; font-size: .82rem; font-weight: 600; color: var(--muted); }
+.plano .destaque { font-family: var(--f-num); font-size: 1.15rem; font-weight: 500; }
+.sim { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.sim .valor-grande input { font-size: 1.1rem; }
+.sim select { width: auto; }
+
+.grafico { position: relative; }
+.grafico svg { display: block; width: 100%; height: 170px; overflow: visible; }
+.grafico .dica {
+  position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .78rem;
+  padding: 5px 8px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -100%); margin-top: -10px;
+}
+
+.historico { list-style: none; margin: 0; padding: 0; }
+.historico li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.historico li:first-child { border-top: 0; }
+.historico .desc { display: flex; gap: 12px; align-items: baseline; min-width: 0; }
+.historico .data { font-family: var(--f-num); font-size: .82rem; color: var(--muted); }
+.historico .nota { overflow-wrap: anywhere; font-size: .92rem; }
+.historico .v { font-family: var(--f-num); font-weight: 500; }
+.historico .v.mais { color: var(--pos); }
+.historico .v.menos { color: var(--neg); }
+.historico .x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--muted); font-size: 1.1rem; line-height: 1; }
+.historico .x:hover { border-color: var(--neg); color: var(--neg); }
+
+.rodape-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- janela de meta ---------- */
+dialog {
+  border: 0; padding: 0; border-radius: 18px; background: var(--surface); color: var(--ink);
+  width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; box-shadow: 0 20px 60px rgb(0 0 0 / .3);
+}
+dialog::backdrop { background: rgb(20 14 10 / .5); }
+.dlg { display: grid; gap: 14px; padding: 20px; }
+.dlg h2 { font-size: 1.3rem; }
+.link-linha { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.foto-escolha { display: grid; grid-template-columns: 72px 1fr; gap: 12px; align-items: center; }
+.dlg-botoes { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- aviso flutuante ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  background: var(--ink); color: var(--bg); border-radius: 12px; padding: 10px 14px; display: flex; gap: 14px; align-items: center;
+  box-shadow: var(--shadow); z-index: 20; width: max-content; max-width: calc(100vw - 32px); font-size: .9rem;
+}
+.toast button { background: transparent; border: 0; color: var(--ouro); font-weight: 700; cursor: pointer; padding: 4px; }
+
+.confete { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; }
+.confete i { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; animation: cair 2.4s ease-in forwards; }
+@keyframes cair { to { transform: translateY(105vh) rotate(720deg); opacity: .8; } }
+@media (prefers-reduced-motion: reduce) { .confete { display: none; } .barra > span { transition: none; } }
+
+@media (max-width: 720px) {
+  .colunas { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .hero { grid-template-columns: 96px 1fr; gap: 14px; }
+  .hero .foto { width: 96px; }
+  .hero .acoes .btn { flex: 1 1 auto; }
+  .duas { grid-template-columns: 1fr; }
+  .historico .desc { display: grid; gap: 0; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topo">
+    <div class="marca">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="2" y="2" width="44" height="44" rx="12" fill="var(--accent)"/>
+        <circle cx="24" cy="12.5" r="5" fill="var(--ouro)"/>
+        <rect x="12" y="19" width="24" height="5" rx="2.5" fill="#fff"/>
+        <path d="M14 25h20v10a5 5 0 0 1-5 5H19a5 5 0 0 1-5-5z" fill="#fff"/>
+        <path d="M16.5 31h15v4a2.5 2.5 0 0 1-2.5 2.5h-10A2.5 2.5 0 0 1 16.5 35z" fill="var(--ouro)"/>
+      </svg>
+      <h1>Cofrinho</h1>
+    </div>
+    <div class="status" id="status" data-s="ok" role="status">Salvo aqui</div>
+  </header>
+
+  <!-- ===== lista de metas ===== -->
+  <section id="tela-lista" class="pilha">
+    <div class="card vazio" id="vazio" hidden>
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="10" r="6" fill="var(--ouro)"/>
+        <rect x="9" y="18" width="30" height="6" rx="3" fill="var(--accent)"/>
+        <path d="M11 26h26v12a6 6 0 0 1-6 6H17a6 6 0 0 1-6-6z" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+      </svg>
+      <h2>O que você quer comprar?</h2>
+      <p>Cole o link do produto, diga quanto ele custa e vá registrando o que guarda. O Cofrinho mostra quanto falta e quando você chega lá.</p>
+      <button class="btn primario" id="nova-vazio" type="button">+ Criar minha primeira meta</button>
+    </div>
+
+    <div class="lista-cab" id="lista-cab" hidden>
+      <h2>Minhas metas</h2>
+      <button class="btn primario" id="nova" type="button">+ Nova meta</button>
+    </div>
+    <div class="grade" id="metas"></div>
+
+    <h3 class="secao-titulo" id="conquistas-titulo" hidden>Já comprei</h3>
+    <div class="grade" id="conquistas"></div>
+
+    <details class="painel" id="sync">
+      <summary>Sincronizar celular e computador</summary>
+      <div class="painel-corpo">
+        <div id="sync-config">
+          <p class="nota">Use o mesmo projeto do Firebase do Caixa do Mês: cole aqui o mesmo código <strong>firebaseConfig</strong> e entre com o mesmo e-mail e senha. Se ainda não tem, o PASSO-A-PASSO do repositório mostra como criar (é grátis).</p>
+          <label class="sr" for="sync-config-texto">Código firebaseConfig</label>
+          <textarea id="sync-config-texto" spellcheck="false" autocomplete="off" placeholder="const firebaseConfig = { apiKey: &quot;AIza…&quot;, databaseURL: &quot;https://…&quot;, … };"></textarea>
+          <div class="linha-botoes" style="margin-top:8px"><button class="btn primario" id="sync-config-salvar" type="button">Ligar sincronização</button></div>
+        </div>
+        <div id="sync-fora" hidden>
+          <p class="nota">Entre com a conta da sincronização. Quem já usa no Caixa do Mês pode usar o mesmo e-mail e senha.</p>
+          <label class="campo"><span>E-mail</span><input type="email" id="sync-email" autocomplete="username"></label>
+          <label class="campo"><span>Senha</span><input type="password" id="sync-senha" autocomplete="current-password"></label>
+          <div class="linha-botoes">
+            <button class="btn primario" id="sync-entrar" type="button">Entrar</button>
+            <button class="btn" id="sync-criar" type="button">Criar conta</button>
+            <button class="btn texto" id="sync-esqueci" type="button">Esqueci a senha</button>
+          </div>
+          <button class="btn texto" id="sync-config-trocar" type="button" style="justify-self:start">Trocar o projeto do Firebase</button>
+        </div>
+        <div id="sync-dentro" hidden>
+          <p class="nota">Conectado como <strong id="sync-quem"></strong>. As metas vão para a nuvem a cada mudança e chegam no outro aparelho quando ele é aberto.</p>
+          <div class="linha-botoes">
+            <button class="btn" id="sync-agora" type="button">Sincronizar agora</button>
+            <button class="btn texto" id="sync-sair" type="button">Sair</button>
+          </div>
+        </div>
+        <p class="msg" id="sync-msg" role="status"></p>
+      </div>
+    </details>
+
+    <details class="painel">
+      <summary>Backup</summary>
+      <div class="painel-corpo">
+        <p class="nota">Gere um texto com todas as metas para guardar ou levar para outro aparelho. Para restaurar, cole o texto e toque em Restaurar (as metas iguais ficam com a versão mais nova).</p>
+        <div class="linha-botoes">
+          <button class="btn" id="bk-gerar" type="button">Gerar backup</button>
+          <button class="btn" id="bk-copiar" type="button">Copiar</button>
+          <button class="btn" id="bk-baixar" type="button">Salvar arquivo</button>
+        </div>
+        <label class="sr" for="bk-texto">Texto do backup</label>
+        <textarea id="bk-texto" spellcheck="false" placeholder="O backup aparece aqui. Para restaurar, cole o texto aqui."></textarea>
+        <div class="linha-botoes"><button class="btn" id="bk-restaurar" type="button">Restaurar</button></div>
+        <p class="msg" id="bk-msg" role="status"></p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===== meta aberta ===== -->
+  <section id="tela-meta" class="pilha" hidden>
+    <button class="btn texto voltar" id="voltar" type="button">← Minhas metas</button>
+
+    <div class="hero">
+      <div class="foto" id="m-foto"></div>
+      <div>
+        <p class="loja" id="m-loja"></p>
+        <h2 id="m-nome"></h2>
+        <p class="preco" id="m-preco"></p>
+        <div class="acoes">
+          <a class="btn primario" id="m-link" target="_blank" rel="noopener noreferrer">Ver produto ↗</a>
+          <button class="btn" id="m-editar" type="button">Editar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card festa" id="m-festa" hidden>
+      <h3>Você chegou lá! 🎉</h3>
+      <p>Já dá para comprar. Confira o preço no link antes de fechar a compra.</p>
+      <div class="linha-botoes">
+        <a class="btn primario" id="m-festa-link" target="_blank" rel="noopener noreferrer">Ir comprar ↗</a>
+        <button class="btn" id="m-comprei" type="button">Já comprei!</button>
+      </div>
+    </div>
+    <div class="card comprada" id="m-comprada" hidden>
+      <p><strong>Comprado!</strong> Esta meta está guardada em "Já comprei".</p>
+      <div class="linha-botoes" style="margin-top:10px"><button class="btn" id="m-reabrir" type="button">Voltar a juntar para ela</button></div>
+    </div>
+
+    <div class="card placar">
+      <div class="topo-placar">
+        <div><span class="rotulo">Guardado</span><span class="grande" id="m-guardado"></span></div>
+        <div class="direita"><span class="rotulo">Faltam</span><strong id="m-faltam"></strong></div>
+      </div>
+      <div class="barra" id="m-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100"><span></span></div>
+      <div class="legenda"><span id="m-pct"></span><span id="m-de"></span></div>
+    </div>
+
+    <div class="colunas">
+      <div class="card">
+        <h3>Guardar dinheiro</h3>
+        <label class="valor-grande"><span>R$</span><input id="v-valor" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" aria-label="Valor"></label>
+        <div class="chips" id="v-chips">
+          <button class="chip" type="button" data-v="1000">+10</button>
+          <button class="chip" type="button" data-v="2000">+20</button>
+          <button class="chip" type="button" data-v="5000">+50</button>
+          <button class="chip" type="button" data-v="10000">+100</button>
+          <button class="chip" type="button" data-v="20000">+200</button>
+          <button class="chip" type="button" data-v="0">limpar</button>
+        </div>
+        <div class="duas">
+          <label class="campo"><span>Dia</span><input type="date" id="v-data"></label>
+          <label class="campo"><span>Anotação (opcional)</span><input type="text" id="v-nota" maxlength="80" placeholder="Ex.: sobra do salário"></label>
+        </div>
+        <div class="form-botoes">
+          <button class="btn primario" id="v-guardar" type="button">Guardar</button>
+          <button class="btn" id="v-tirar" type="button">Tirei</button>
+        </div>
+        <p class="msg" id="v-msg" role="status"></p>
+      </div>
+
+      <div class="card plano">
+        <h3 style="margin:0">Plano</h3>
+        <div class="bloco" id="p-prazo"></div>
+        <div class="bloco" id="p-ritmo"></div>
+        <div class="bloco">
+          <h4>E se eu guardar…</h4>
+          <div class="sim">
+            <label class="valor-grande"><span>R$</span><input id="s-valor" type="text" inputmode="decimal" autocomplete="off" placeholder="100" aria-label="Valor por período"></label>
+            <select id="s-periodo" aria-label="Período"><option value="sem">por semana</option><option value="mes" selected>por mês</option></select>
+          </div>
+          <p id="s-resp" class="mudo pequeno"></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="g-card" hidden>
+      <h3>Como o cofrinho encheu</h3>
+      <div class="grafico" id="grafico"></div>
+    </div>
+
+    <div class="card">
+      <h3>Histórico</h3>
+      <p class="mudo pequeno" id="h-vazio">Nada guardado ainda. Comece com qualquer valor: o importante é o hábito.</p>
+      <ul class="historico" id="historico"></ul>
+    </div>
+
+    <div class="rodape-meta">
+      <span class="mudo pequeno" id="m-criada"></span>
+      <button class="btn perigo" id="m-apagar" type="button">Apagar esta meta</button>
+    </div>
+  </section>
+</div>
+
+<!-- ===== criar / editar meta ===== -->
+<dialog id="dlg">
+  <form class="dlg" id="dlg-form" method="dialog" novalidate>
+    <h2 id="dlg-titulo">Nova meta</h2>
+    <div class="campo"><label for="f-link"><span>Link do produto</span></label>
+      <div class="link-linha">
+        <input type="text" id="f-link" inputmode="url" autocomplete="off" placeholder="Cole aqui o link da loja">
+        <button class="btn" id="f-buscar" type="button">Buscar</button>
+      </div>
+      <small id="f-link-msg">O Cofrinho tenta pegar o nome, a foto e o preço da página.</small>
+    </div>
+    <label class="campo"><span>O que é</span><input type="text" id="f-nome" maxlength="90" placeholder="Ex.: Nintendo Switch 2"></label>
+    <div class="duas">
+      <label class="campo"><span>Preço</span>
+        <span class="valor-grande" style="padding:0 12px"><span style="font-size:1rem">R$</span><input id="f-preco" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" style="font-size:1.1rem"></span>
+      </label>
+      <label class="campo"><span>Quero comprar até (opcional)</span><input type="date" id="f-prazo"></label>
+    </div>
+    <div class="campo"><span>Foto</span>
+      <div class="foto-escolha">
+        <div class="foto" id="f-foto"></div>
+        <div class="linha-botoes">
+          <label class="btn" for="f-arquivo">Escolher foto</label>
+          <input type="file" id="f-arquivo" accept="image/*" class="sr">
+          <button class="btn texto" id="f-tirar-foto" type="button">Remover</button>
+        </div>
+      </div>
+    </div>
+    <label class="campo" id="f-inicial-campo"><span>Já tenho guardado (opcional)</span>
+      <span class="valor-grande" style="padding:0 12px"><span style="font-size:1rem">R$</span><input id="f-inicial" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00" style="font-size:1.1rem"></span>
+    </label>
+    <p class="msg" id="f-msg" role="status"></p>
+    <div class="dlg-botoes">
+      <button class="btn" id="f-cancelar" type="button">Cancelar</button>
+      <button class="btn primario" id="f-salvar" type="button">Salvar meta</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" hidden role="status"><span id="toast-txt"></span><button id="toast-btn" type="button"></button></div>
+
+<script>
+(() => {
+  "use strict";
+  const PREFIXO = "cofrinho:";
+  const CHAVE_DADOS = PREFIXO + "dados";
+  const NO_APP = /CofrinhoApp/.test(navigator.userAgent);
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const novoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+  // ---------- dinheiro (em centavos inteiros) ----------
+  const fmtBRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  const fmtCurto = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const brl = (c) => fmtBRL.format((c || 0) / 100);
+  const brlCurto = (c) => fmtCurto.format(Math.round((c || 0) / 100));
+  function paraCentavos(txt) {
+    let s = String(txt ?? "").replace(/[^\d,.]/g, "");
+    if (!s) return 0;
+    if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+    else if ((s.match(/\./g) || []).length > 1 || /^\d{1,3}\.\d{3}$/.test(s)) s = s.replace(/\./g, "");
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? Math.max(0, Math.round(n * 100)) : 0;
+  }
+  const paraTexto = (c) => (c ? (c / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
+  const arredondarReal = (c) => Math.ceil(c / 100) * 100;
+
+  // ---------- datas (AAAA-MM-DD no fuso do aparelho) ----------
+  const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const hojeISO = () => iso(new Date());
+  const paraData = (s) => { const [a, m, d] = s.split("-").map(Number); return new Date(a, m - 1, d); };
+  const diasEntre = (a, b) => Math.round((paraData(b) - paraData(a)) / 86400000);
+  const somarDias = (s, n) => { const d = paraData(s); d.setDate(d.getDate() + n); return iso(d); };
+  const somarMeses = (s, n) => { const d = paraData(s); d.setMonth(d.getMonth() + n); return iso(d); };
+  const dataCurta = (s) => paraData(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+  const dataLonga = (s) => paraData(s).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+  function mesAno(s) {
+    const t = paraData(s).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    return t;
+  }
+  function duracao(dias) {
+    if (dias <= 1) return "1 dia";
+    if (dias < 21) return `${dias} dias`;
+    if (dias < 75) return `${Math.round(dias / 7)} semanas`;
+    const meses = Math.round(dias / 30.44);
+    if (meses < 24) return `${meses} meses`;
+    const anos = dias / 365.25;
+    return `${anos.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} anos`;
+  }
+
+  // ---------- links ----------
+  function extrairLink(txt) {
+    const s = String(txt || "").trim();
+    const m = s.match(/https?:\/\/[^\s<>"']+/i);
+    if (m) return m[0].replace(/[).,;]+$/, "");
+    if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(s)) return "https://" + s;
+    return "";
+  }
+  const linkSeguro = (u) => (/^https?:\/\//i.test(u || "") ? u : "");
+  const imagemSegura = (u) => (/^(https?:\/\/|data:image\/)/i.test(u || "") ? u : "");
+  const LOJAS = [
+    [/mercadoli[vb]re|mercadolibre|meli\.la/, "Mercado Livre"], [/amazon|amzn\./, "Amazon"], [/magazineluiza|magalu/, "Magalu"],
+    [/americanas/, "Americanas"], [/casasbahia/, "Casas Bahia"], [/pontofrio/, "Ponto"], [/kabum/, "KaBuM!"],
+    [/shopee/, "Shopee"], [/aliexpress/, "AliExpress"], [/carrefour/, "Carrefour"], [/fastshop/, "Fast Shop"],
+    [/submarino/, "Submarino"], [/extra\.com/, "Extra"], [/nintendo/, "Nintendo"], [/shein/, "Shein"], [/olx/, "OLX"],
+  ];
+  function lojaDe(u) {
+    if (!linkSeguro(u)) return "";
+    let host = "";
+    try { host = new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; }
+    for (const [re, nome] of LOJAS) if (re.test(host)) return nome;
+    return host;
+  }
+
+  // ---------- dados ----------
+  // metas[id] = { id, nome, link, imagem, preco, prazo, criada, atualizado, comprada, apagada, movs: [{ id, valor, data, nota }] }
+  // valor > 0 é dinheiro guardado; valor < 0 é dinheiro tirado do cofrinho.
+  let metas = {};
+
+  function normalizarMeta(d, id) {
+    if (!d || typeof d !== "object") return null;
+    const movsBrutos = Array.isArray(d.movs) ? d.movs : d.movs && typeof d.movs === "object" ? Object.values(d.movs) : [];
+    const movs = movsBrutos
+      .filter((m) => m && typeof m === "object" && Number.isFinite(Number(m.valor)) && Number(m.valor) !== 0)
+      .map((m) => ({ id: String(m.id || novoId()), valor: Math.round(Number(m.valor)), data: RE_DATA.test(m.data) ? m.data : hojeISO(), nota: String(m.nota || "").slice(0, 80), criado: Number(m.criado) || 0 }));
+    return {
+      id: String(d.id || id),
+      nome: String(d.nome || "").slice(0, 90),
+      link: linkSeguro(String(d.link || "")),
+      imagem: imagemSegura(String(d.imagem || "")),
+      preco: Math.max(0, Math.round(Number(d.preco) || 0)),
+      prazo: RE_DATA.test(d.prazo) ? d.prazo : "",
+      criada: Number(d.criada) || Date.now(),
+      atualizado: Number(d.atualizado) || 0,
+      comprada: !!d.comprada,
+      apagada: !!d.apagada,
+      movs,
+    };
+  }
+
+  function carregarLocal() {
+    try {
+      const j = JSON.parse(localStorage.getItem(CHAVE_DADOS) || "null");
+      const out = {};
+      if (j && j.metas && typeof j.metas === "object") {
+        for (const [id, d] of Object.entries(j.metas)) { const m = normalizarMeta(d, id); if (m) out[m.id] = m; }
+      }
+      return out;
+    } catch { return {}; }
+  }
+  let avisouArmazenamento = false;
+  function gravarLocal() {
+    try {
+      localStorage.setItem(CHAVE_DADOS, JSON.stringify({ versao: 1, metas }));
+      return true;
+    } catch {
+      if (!avisouArmazenamento) { avisouArmazenamento = true; toast("Não consegui salvar neste aparelho. Faça um backup."); }
+      setStatusTexto("erro", "Não salvou neste aparelho");
+      return false;
+    }
+  }
+  // Toda mudança passa por aqui: marca a hora, grava e manda para a nuvem.
+  function mudou(meta) {
+    meta.atualizado = Math.max(Date.now(), (meta.atualizado || 0) + 1);
+    metas[meta.id] = meta;
+    gravarLocal();
+    agendarSync();
+  }
+
+  const visiveis = () => Object.values(metas).filter((m) => !m.apagada);
+  function contas(meta) {
+    const guardado = meta.movs.reduce((s, m) => s + m.valor, 0);
+    const faltam = Math.max(0, meta.preco - guardado);
+    const pct = meta.preco ? Math.max(0, guardado) / meta.preco * 100 : 0;
+    return { guardado, faltam, pct, chegou: meta.preco > 0 && guardado >= meta.preco };
+  }
+  const pctTexto = (p) => (p >= 100 ? "100%" : p > 0 && p < 1 ? "<1%" : `${Math.floor(p)}%`);
+  const movsOrdenados = (meta) => meta.movs.slice().sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : (b.criado || 0) - (a.criado || 0)));
+
+  // ---------- pedacinhos de tela ----------
+  function fotoHTML(meta, selo) {
+    const img = imagemSegura(meta.imagem);
+    const letra = esc((meta.nome || "?").trim().charAt(0).toUpperCase() || "?");
+    return (img
+      ? `<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-letra="${letra}">`
+      : `<span class="letra">${letra}</span>`) + (selo ? '<span class="selo" aria-hidden="true">✓</span>' : "");
+  }
+  // Foto que não carrega (sem internet, link quebrado): mostra a inicial no lugar.
+  document.addEventListener("error", (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !img.dataset.letra) return;
+    const s = document.createElement("span");
+    s.className = "letra";
+    s.textContent = img.dataset.letra;
+    img.replaceWith(s);
+  }, true);
+  function pintarBarra(el, pct) {
+    el.querySelector("span").style.width = `${Math.min(100, pct)}%`;
+    el.classList.toggle("cheia", pct >= 100);
+    el.setAttribute("aria-valuenow", String(Math.min(100, Math.floor(pct))));
+  }
+
+  let timerToast = 0;
+  function toast(texto, acaoTexto, acao) {
+    $("toast-txt").textContent = texto;
+    const b = $("toast-btn");
+    b.hidden = !acao;
+    b.textContent = acaoTexto || "";
+    b.onclick = () => { $("toast").hidden = true; acao && acao(); };
+    $("toast").hidden = false;
+    clearTimeout(timerToast);
+    timerToast = setTimeout(() => { $("toast").hidden = true; }, acao ? 7000 : 3500);
+  }
+
+  function confete() {
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const box = document.createElement("div");
+    box.className = "confete";
+    const cores = ["#B5432A", "#D9A23A", "#1E7653", "#3C659C", "#E07A5F"];
+    for (let i = 0; i < 60; i++) {
+      const p = document.createElement("i");
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.background = cores[i % cores.length];
+      p.style.animationDelay = `${Math.random() * .6}s`;
+      p.style.animationDuration = `${1.8 + Math.random() * 1.4}s`;
+      box.appendChild(p);
+    }
+    document.body.appendChild(box);
+    setTimeout(() => box.remove(), 3800);
+  }
+
+  // ---------- telas ----------
+  let aberta = null;      // id da meta aberta
+  let veioDaLista = false;
+
+  function rota() {
+    const m = location.hash.match(/^#\/meta\/(.+)$/);
+    const id = m ? decodeURIComponent(m[1]) : null;
+    return id && metas[id] && !metas[id].apagada ? id : null;
+  }
+  function render() {
+    aberta = rota();
+    $("tela-lista").hidden = !!aberta;
+    $("tela-meta").hidden = !aberta;
+    if (aberta) renderMeta(); else renderLista();
+  }
+  function irPara(id) {
+    veioDaLista = true;
+    location.hash = `#/meta/${encodeURIComponent(id)}`;
+    window.scrollTo(0, 0);
+  }
+  function voltarLista() {
+    if (veioDaLista) { veioDaLista = false; history.back(); }
+    else { history.replaceState(null, "", location.pathname + location.search); render(); }
+  }
+  window.addEventListener("hashchange", () => { if (!rota()) veioDaLista = false; render(); window.scrollTo(0, 0); });
+
+  function cartaoMeta(meta) {
+    const c = contas(meta);
+    const feita = meta.comprada;
+    const rodape = feita
+      ? `<span><b>Comprado</b></span><span>${brlCurto(meta.preco)}</span>`
+      : c.chegou ? `<span><b style="color:var(--pos)">Chegou lá! Hora de comprar</b></span><span>${pctTexto(c.pct)}</span>`
+      : `<span>${pctTexto(c.pct)}</span><span>faltam <span class="num">${brlCurto(c.faltam)}</span></span>`;
+    return `<button class="card meta-card${feita ? " feita" : ""}" type="button" data-id="${esc(meta.id)}">
+      <div class="foto">${fotoHTML(meta, feita)}</div>
+      <div>
+        <h3>${esc(meta.nome || "Sem nome")}</h3>
+        <p class="valores"><strong class="num">${brl(c.guardado)}</strong> de <span class="num">${brl(meta.preco)}</span></p>
+        ${feita ? "" : `<div class="barra${c.chegou ? " cheia" : ""}"><span style="width:${Math.min(100, c.pct)}%"></span></div>`}
+        <div class="rodape">${rodape}</div>
+      </div>
+    </button>`;
+  }
+  function renderLista() {
+    const todas = visiveis().sort((a, b) => a.criada - b.criada);
+    const ativas = todas.filter((m) => !m.comprada);
+    const feitas = todas.filter((m) => m.comprada);
+    $("vazio").hidden = todas.length > 0;
+    $("lista-cab").hidden = todas.length === 0;
+    $("metas").innerHTML = ativas.map(cartaoMeta).join("");
+    $("conquistas-titulo").hidden = feitas.length === 0;
+    $("conquistas").innerHTML = feitas.map(cartaoMeta).join("");
+  }
+  for (const id of ["metas", "conquistas"]) {
+    $(id).addEventListener("click", (e) => {
+      const b = e.target.closest("[data-id]");
+      if (b) irPara(b.dataset.id);
+    });
+  }
+
+  function renderMeta() {
+    const meta = metas[aberta];
+    const c = contas(meta);
+    $("m-foto").innerHTML = fotoHTML(meta, meta.comprada);
+    $("m-loja").textContent = lojaDe(meta.link);
+    $("m-nome").textContent = meta.nome || "Sem nome";
+    $("m-preco").innerHTML = `Preço: <span class="num">${brl(meta.preco)}</span>${meta.prazo ? ` · até ${esc(dataCurta(meta.prazo))}` : ""}`;
+    const link = linkSeguro(meta.link);
+    for (const id of ["m-link", "m-festa-link"]) {
+      if (link) $(id).href = link; else $(id).removeAttribute("href");
+    }
+    $("m-link").hidden = !link;
+    $("m-festa-link").hidden = !link;
+
+    $("m-guardado").textContent = brl(c.guardado);
+    $("m-faltam").textContent = brl(c.faltam);
+    pintarBarra($("m-barra"), c.pct);
+    $("m-pct").textContent = `${pctTexto(c.pct)} da meta`;
+    $("m-de").textContent = `meta: ${brl(meta.preco)}`;
+    $("m-festa").hidden = !c.chegou || meta.comprada;
+    $("m-comprada").hidden = !meta.comprada;
+
+    renderPlano(meta, c);
+    renderSimulador();
+    renderHistorico(meta);
+    renderGrafico(meta);
+    $("m-criada").textContent = `Meta criada em ${new Date(meta.criada).toLocaleDateString("pt-BR")}`;
+    document.title = `${meta.nome || "Meta"} · Cofrinho`;
+  }
+
+  function renderPlano(meta, c) {
+    const hoje = hojeISO();
+    let prazo = "";
+    if (c.chegou) {
+      prazo = `<h4>Prazo</h4><p>Meta batida! Não precisa guardar mais nada para ela.</p>`;
+    } else if (!meta.prazo) {
+      prazo = `<h4>Prazo</h4><p class="mudo pequeno">Sem data. Toque em <strong>Editar</strong> e diga até quando quer comprar: eu calculo quanto guardar por semana.</p>`;
+    } else {
+      const dias = diasEntre(hoje, meta.prazo);
+      if (dias <= 0) {
+        prazo = `<h4>Prazo</h4><p>O prazo (${esc(dataCurta(meta.prazo))}) ${dias === 0 ? "é hoje" : "já passou"}. Faltam <span class="num">${brl(c.faltam)}</span>. Escolha uma data nova em Editar.</p>`;
+      } else {
+        const semanas = Math.max(1, dias / 7);
+        const porSemana = arredondarReal(c.faltam / semanas);
+        const porMes = arredondarReal(c.faltam / Math.max(1, dias / 30.44));
+        const porDia = arredondarReal(c.faltam / dias);
+        prazo = `<h4>Para comprar até ${esc(dataLonga(meta.prazo))} (em ${duracao(dias)})</h4>
+          <p class="destaque">${brlCurto(porSemana)} por semana</p>
+          <p class="mudo pequeno">ou ${dias >= 45 ? `${brlCurto(porMes)} por mês, ou ` : ""}${brlCurto(porDia)} por dia</p>`;
+      }
+    }
+    $("p-prazo").innerHTML = prazo;
+
+    // Ritmo: quanto foi guardado desde o primeiro depósito, por dia, projetado para frente.
+    let ritmo = "";
+    if (!c.chegou) {
+      const datas = meta.movs.map((m) => m.data).sort();
+      const dias = datas.length ? diasEntre(datas[0], hoje) + 1 : 0;
+      if (c.guardado <= 0 || meta.movs.length < 2 || dias < 14) {
+        ritmo = `<h4>Seu ritmo</h4><p class="mudo pequeno">Depois de algumas semanas guardando, eu mostro quando você chega lá no seu ritmo.</p>`;
+      } else {
+        const porDia = c.guardado / dias;
+        const restam = Math.ceil(c.faltam / porDia);
+        const chega = somarDias(hoje, restam);
+        const atrasado = meta.prazo && chega > meta.prazo;
+        ritmo = `<h4>Seu ritmo</h4>
+          <p>Você guarda em média <span class="num">${brlCurto(porDia * 30.44)}</span> por mês.</p>
+          <p>Nesse ritmo chega lá em <strong>${esc(mesAno(chega))}</strong> (em ${duracao(restam)}).${atrasado ? " <span style=\"color:var(--neg)\">Depois do prazo: dá para apertar um pouco.</span>" : ""}</p>`;
+      }
+    }
+    $("p-ritmo").innerHTML = ritmo;
+    $("p-ritmo").hidden = !ritmo;
+  }
+
+  function renderSimulador() {
+    const meta = metas[aberta];
+    if (!meta) return;
+    const c = contas(meta);
+    const v = paraCentavos($("s-valor").value);
+    const porSemana = $("s-periodo").value === "sem";
+    if (c.chegou) { $("s-resp").textContent = "Você já tem o suficiente."; return; }
+    if (!v) { $("s-resp").textContent = `Digite um valor para ver quando junta os ${brl(c.faltam)} que faltam.`; return; }
+    const n = Math.ceil(c.faltam / v);
+    const hoje = hojeISO();
+    const chega = porSemana ? somarDias(hoje, n * 7) : somarMeses(hoje, n);
+    const passos = porSemana ? `${n} ${n === 1 ? "semana" : "semanas"}` : `${n} ${n === 1 ? "mês" : "meses"}`;
+    $("s-resp").innerHTML = `Em <strong>${passos}</strong>: por volta de <strong>${esc(dataLonga(chega))}</strong>.`;
+  }
+  $("s-valor").addEventListener("input", renderSimulador);
+  $("s-periodo").addEventListener("change", renderSimulador);
+
+  function renderHistorico(meta) {
+    const lista = movsOrdenados(meta);
+    $("h-vazio").hidden = lista.length > 0;
+    $("historico").innerHTML = lista.map((m) => `<li>
+      <span class="desc"><span class="data">${esc(dataCurta(m.data))}</span>
+      <span class="nota">${m.nota ? esc(m.nota) : `<span class="mudo">${m.valor > 0 ? "Guardei" : "Tirei"}</span>`}</span></span>
+      <span class="v ${m.valor > 0 ? "mais" : "menos"}">${m.valor > 0 ? "+" : "−"}${brl(Math.abs(m.valor))}</span>
+      <button class="x" type="button" data-mov="${esc(m.id)}" aria-label="Apagar este lançamento">×</button>
+    </li>`).join("");
+  }
+  $("historico").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mov]");
+    if (!b || !aberta) return;
+    const meta = metas[aberta];
+    const i = meta.movs.findIndex((m) => m.id === b.dataset.mov);
+    if (i < 0) return;
+    const [tirado] = meta.movs.splice(i, 1);
+    mudou(meta);
+    renderMeta();
+    toast(`Lançamento de ${brl(Math.abs(tirado.valor))} apagado.`, "Desfazer", () => {
+      const m = metas[meta.id];
+      if (!m) return;
+      m.movs.push(tirado);
+      mudou(m);
+      render();
+    });
+  });
+
+  // ---------- gráfico: total guardado ao longo do tempo, com a linha da meta ----------
+  function renderGrafico(meta) {
+    const box = $("grafico");
+    const movs = meta.movs.slice().sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+    if (movs.length < 2 || !meta.preco) { $("g-card").hidden = true; box.innerHTML = ""; return; }
+    $("g-card").hidden = false;
+    const pontos = [];
+    let total = 0;
+    for (const m of movs) {
+      total += m.valor;
+      if (pontos.length && pontos[pontos.length - 1].data === m.data) pontos[pontos.length - 1].total = total;
+      else pontos.push({ data: m.data, total });
+    }
+    const inicio = pontos[0].data;
+    const hoje = hojeISO();
+    const fim = pontos[pontos.length - 1].data > hoje ? pontos[pontos.length - 1].data : hoje;
+    const spanDias = Math.max(1, diasEntre(inicio, fim));
+    const W = Math.max(280, box.clientWidth || 600), H = 170, E = 8, D = 64, T = 14, B = 24;
+    const maxY = Math.max(meta.preco, ...pontos.map((p) => p.total)) * 1.08;
+    const x = (d) => E + (diasEntre(inicio, d) / spanDias) * (W - E - D);
+    const y = (v) => T + (1 - Math.max(0, v) / maxY) * (H - T - B);
+    // Degraus: o total só muda no dia do depósito.
+    let caminho = `M${x(pontos[0].data)},${y(pontos[0].total)}`;
+    for (let i = 1; i < pontos.length; i++) caminho += ` H${x(pontos[i].data)} V${y(pontos[i].total)}`;
+    caminho += ` H${x(fim)}`;
+    const area = `${caminho} V${y(0)} H${x(pontos[0].data)} Z`;
+    const yMeta = y(meta.preco);
+    const ult = pontos[pontos.length - 1];
+    // Rótulo do total ao lado do último ponto, sem encostar no rótulo "meta".
+    let yValor = y(ult.total) + 4;
+    if (Math.abs(yValor - (yMeta + 4)) < 14) yValor = y(ult.total) < yMeta ? yMeta - 10 : yMeta + 18;
+    yValor = Math.min(H - B, Math.max(T, yValor));
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Total guardado de ${esc(dataCurta(inicio))} até hoje: ${esc(brl(ult.total))}, meta ${esc(brl(meta.preco))}">
+      <line x1="${E}" x2="${W - D}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-width="1"/>
+      <line x1="${E}" x2="${W - D}" y1="${yMeta}" y2="${yMeta}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <text x="${W - D + 6}" y="${yMeta + 4}" font-size="11" fill="var(--muted)" font-family="var(--f-body)">meta</text>
+      <path d="${area}" fill="var(--accent)" opacity=".12"/>
+      <path d="${caminho}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="${x(fim)}" cy="${y(ult.total)}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
+      <text x="${W - D + 6}" y="${yValor}" font-size="11" fill="var(--ink)" font-family="var(--f-num)">${esc(brlCurto(ult.total))}</text>
+      <text x="${E}" y="${H - 6}" font-size="11" fill="var(--muted)" font-family="var(--f-body)">${esc(dataCurta(inicio))}</text>
+      <text x="${W - D}" y="${H - 6}" font-size="11" fill="var(--muted)" text-anchor="end" font-family="var(--f-body)">hoje</text>
+      <line class="mira" x1="0" x2="0" y1="${T}" y2="${y(0)}" stroke="var(--muted)" stroke-width="1" visibility="hidden"/>
+      <circle class="mira-p" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" visibility="hidden"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="transparent" class="alvo"/>
+    </svg><div class="dica" hidden></div>`;
+    const svg = box.querySelector("svg"), dica = box.querySelector(".dica");
+    const mira = svg.querySelector(".mira"), miraP = svg.querySelector(".mira-p");
+    function mostrar(ev) {
+      const r = svg.getBoundingClientRect();
+      const px = ((ev.clientX - r.left) / r.width) * W;
+      let p = pontos[0];
+      for (const q of pontos) if (x(q.data) <= px + 2) p = q;
+      const cx = x(p.data), cy = y(p.total);
+      mira.setAttribute("x1", cx); mira.setAttribute("x2", cx); mira.setAttribute("visibility", "visible");
+      miraP.setAttribute("cx", cx); miraP.setAttribute("cy", cy); miraP.setAttribute("visibility", "visible");
+      dica.hidden = false;
+      dica.innerHTML = `${esc(dataCurta(p.data))} · <span class="num">${esc(brl(p.total))}</span>`;
+      dica.style.left = `${Math.min(Math.max(cx / W * r.width, 70), r.width - 70)}px`;
+      dica.style.top = `${cy / H * r.height}px`;
+    }
+    function esconder() { mira.setAttribute("visibility", "hidden"); miraP.setAttribute("visibility", "hidden"); dica.hidden = true; }
+    svg.addEventListener("pointermove", mostrar);
+    svg.addEventListener("pointerdown", mostrar);
+    svg.addEventListener("pointerleave", esconder);
+  }
+  let timerResize = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(timerResize);
+    timerResize = setTimeout(() => { if (aberta) renderGrafico(metas[aberta]); }, 150);
+  });
+
+  // ---------- guardar / tirar ----------
+  $("v-data").value = hojeISO();
+  $("v-chips").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-v]");
+    if (!b) return;
+    const soma = Number(b.dataset.v);
+    $("v-valor").value = soma ? paraTexto(paraCentavos($("v-valor").value) + soma) : "";
+    $("v-msg").textContent = "";
+  });
+  function lancar(sinal) {
+    const meta = metas[aberta];
+    if (!meta) return;
+    const v = paraCentavos($("v-valor").value);
+    if (!v) { $("v-msg").textContent = "Digite um valor ou toque num dos botões +10, +20…"; $("v-valor").focus(); return; }
+    const antes = contas(meta);
+    if (sinal < 0 && v > antes.guardado) {
+      $("v-msg").textContent = `Só tem ${brl(antes.guardado)} guardado nesta meta.`;
+      return;
+    }
+    const data = RE_DATA.test($("v-data").value) ? $("v-data").value : hojeISO();
+    meta.movs.push({ id: novoId(), valor: sinal * v, data, nota: $("v-nota").value.trim().slice(0, 80), criado: Date.now() });
+    mudou(meta);
+    $("v-valor").value = "";
+    $("v-nota").value = "";
+    $("v-data").value = hojeISO();
+    const depois = contas(meta);
+    $("v-msg").textContent = sinal > 0
+      ? depois.chegou ? "" : `Guardado! Agora faltam ${brl(depois.faltam)}.`
+      : `Anotado. Faltam ${brl(depois.faltam)}.`;
+    renderMeta();
+    if (!antes.chegou && depois.chegou) confete();
+  }
+  $("v-guardar").addEventListener("click", () => lancar(1));
+  $("v-tirar").addEventListener("click", () => lancar(-1));
+  $("v-valor").addEventListener("keydown", (e) => { if (e.key === "Enter") lancar(1); });
+
+  $("voltar").addEventListener("click", voltarLista);
+  $("m-editar").addEventListener("click", () => abrirDialogo(metas[aberta]));
+  $("m-comprei").addEventListener("click", () => {
+    const meta = metas[aberta];
+    meta.comprada = true;
+    mudou(meta);
+    confete();
+    renderMeta();
+    toast("Parabéns pela compra! A meta foi para \"Já comprei\".");
+  });
+  $("m-reabrir").addEventListener("click", () => {
+    const meta = metas[aberta];
+    meta.comprada = false;
+    mudou(meta);
+    renderMeta();
+  });
+  $("m-apagar").addEventListener("click", () => {
+    const meta = metas[aberta];
+    if (!confirm(`Apagar a meta "${meta.nome || "sem nome"}" e todo o histórico dela?`)) return;
+    meta.apagada = true;
+    mudou(meta);
+    voltarLista();
+    toast("Meta apagada.", "Desfazer", () => {
+      const m = metas[meta.id];
+      if (!m) return;
+      m.apagada = false;
+      mudou(m);
+      render();
+    });
+  });
+
+  // ---------- janela de criar / editar ----------
+  let editando = null;      // id da meta em edição (null = nova)
+  let fotoForm = "";
+  let buscaAtual = 0;
+
+  function mostrarFotoForm() {
+    $("f-foto").innerHTML = fotoHTML({ imagem: fotoForm, nome: $("f-nome").value || "?" });
+    $("f-tirar-foto").hidden = !fotoForm;
+  }
+  function abrirDialogo(meta, linkInicial) {
+    editando = meta ? meta.id : null;
+    buscaAtual++;
+    $("dlg-titulo").textContent = meta ? "Editar meta" : "Nova meta";
+    $("f-link").value = meta ? meta.link : linkInicial || "";
+    $("f-nome").value = meta ? meta.nome : "";
+    $("f-preco").value = meta ? paraTexto(meta.preco) : "";
+    $("f-prazo").value = meta ? meta.prazo : "";
+    $("f-inicial").value = "";
+    $("f-inicial-campo").hidden = !!meta;
+    $("f-msg").textContent = "";
+    $("f-link-msg").textContent = "O Cofrinho tenta pegar o nome, a foto e o preço da página.";
+    fotoForm = meta ? meta.imagem : "";
+    mostrarFotoForm();
+    const dlg = $("dlg");
+    if (typeof dlg.showModal === "function") { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute("open", "");
+    if (linkInicial) buscarDoLink(true);
+    else if (!meta) $("f-link").focus();
+  }
+  function fecharDialogo() {
+    buscaAtual++;
+    const dlg = $("dlg");
+    if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open");
+  }
+  $("nova").addEventListener("click", () => abrirDialogo(null));
+  $("nova-vazio").addEventListener("click", () => abrirDialogo(null));
+  $("f-cancelar").addEventListener("click", fecharDialogo);
+  $("f-nome").addEventListener("input", () => { if (!fotoForm) mostrarFotoForm(); });
+  $("f-tirar-foto").addEventListener("click", () => { fotoForm = ""; mostrarFotoForm(); });
+  $("dlg-form").addEventListener("submit", (e) => e.preventDefault());
+
+  $("f-salvar").addEventListener("click", () => {
+    const nome = $("f-nome").value.trim();
+    const preco = paraCentavos($("f-preco").value);
+    const linkTxt = $("f-link").value.trim();
+    const link = linkTxt ? extrairLink(linkTxt) : "";
+    if (linkTxt && !link) { $("f-msg").textContent = "Esse link não parece válido. Copie o endereço da página do produto."; return; }
+    if (!nome) { $("f-msg").textContent = "Dê um nome para a meta (ex.: Nintendo Switch 2)."; $("f-nome").focus(); return; }
+    if (!preco) { $("f-msg").textContent = "Diga quanto custa, para eu calcular quanto falta."; $("f-preco").focus(); return; }
+    const prazo = RE_DATA.test($("f-prazo").value) ? $("f-prazo").value : "";
+    let meta;
+    if (editando && metas[editando]) {
+      meta = metas[editando];
+      Object.assign(meta, { nome, preco, link, prazo, imagem: fotoForm });
+    } else {
+      meta = { id: novoId(), nome, preco, link, prazo, imagem: fotoForm, criada: Date.now(), atualizado: 0, comprada: false, apagada: false, movs: [] };
+      const inicial = paraCentavos($("f-inicial").value);
+      if (inicial) meta.movs.push({ id: novoId(), valor: inicial, data: hojeISO(), nota: "O que eu já tinha", criado: Date.now() });
+    }
+    mudou(meta);
+    const nova = !editando;
+    fecharDialogo();
+    if (nova) irPara(meta.id); else render();
+  });
+
+  // Foto escolhida no aparelho: reduzida para caber bem no armazenamento e na sincronização.
+  async function reduzirImagem(blob, max = 480) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const img = await new Promise((ok, erro) => { const i = new Image(); i.onload = () => ok(i); i.onerror = erro; i.src = url; });
+      const k = Math.min(1, max / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
+      const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+      const cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      return cv.toDataURL("image/jpeg", .82);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  $("f-arquivo").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    try { fotoForm = await reduzirImagem(f); mostrarFotoForm(); }
+    catch { $("f-msg").textContent = "Não consegui abrir essa imagem. Tente outra."; }
+  });
+
+  // ---------- ler nome, foto e preço da página do produto ----------
+  // No app Android a página pode ler outros sites; num navegador comum a loja costuma bloquear.
+  function limparTitulo(t) {
+    let s = String(t || "").replace(/\s+/g, " ").trim();
+    s = s.replace(/^Amazon\.com(\.br)?\s*:\s*/i, "");
+    s = s.split(/\s+[|]\s+/)[0];
+    s = s.replace(/\s+[-–]\s+(Amazon|Mercado Livre|Magalu|Magazine Luiza|KaBuM!?|Americanas|Casas Bahia|Shopee|AliExpress|Submarino|Ponto|Extra|Carrefour|Fast Shop)\b.*$/i, "");
+    s = s.replace(/\s*:\s*Amazon\.com(\.br)?.*$/i, "");
+    return s.slice(0, 90).trim();
+  }
+  function lerJsonLd(doc) {
+    const achado = { nome: "", imagem: "", preco: "" };
+    const visitar = (o) => {
+      if (!o || typeof o !== "object") return;
+      if (Array.isArray(o)) { o.forEach(visitar); return; }
+      const tipo = [].concat(o["@type"] || []).join(" ");
+      if (/Product/i.test(tipo)) {
+        if (!achado.nome && o.name) achado.nome = String(o.name);
+        const img = [].concat(o.image || [])[0];
+        if (!achado.imagem && img) achado.imagem = typeof img === "string" ? img : img.url || "";
+        const ofertas = [].concat(o.offers || []);
+        for (const of of ofertas) {
+          const p = of && (of.price ?? of.lowPrice ?? (of.priceSpecification && of.priceSpecification.price));
+          if (!achado.preco && p != null) achado.preco = String(p);
+        }
+      }
+      if (o["@graph"]) visitar(o["@graph"]);
+    };
+    for (const s of doc.querySelectorAll('script[type="application/ld+json"]')) {
+      try { visitar(JSON.parse(s.textContent)); } catch { /* bloco inválido: ignora */ }
+    }
+    return achado;
+  }
+  async function lerPagina(url) {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 15000);
+    try {
+      const r = await fetch(url, { signal: ctl.signal, credentials: "omit", redirect: "follow" });
+      const html = await r.text();
+      const base = r.url || url;
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const meta = (sel) => { const el = doc.querySelector(sel); return el ? (el.getAttribute("content") || "").trim() : ""; };
+      const ld = lerJsonLd(doc);
+      let titulo = meta('meta[property="og:title"]') || meta('meta[name="twitter:title"]') || ld.nome || (doc.title || "");
+      let imagem = meta('meta[property="og:image:secure_url"]') || meta('meta[property="og:image"]') || meta('meta[name="twitter:image"]') || ld.imagem;
+      if (!imagem) {
+        const el = doc.querySelector("#landingImage, #imgBlkFront, link[rel='image_src']");
+        imagem = el ? el.getAttribute("data-old-hires") || el.getAttribute("src") || el.getAttribute("href") || "" : "";
+      }
+      let preco = meta('meta[property="product:price:amount"]') || meta('meta[property="og:price:amount"]') || meta('meta[itemprop="price"]') || ld.preco;
+      if (!preco) {
+        const el = doc.querySelector("[itemprop='price'], .a-price .a-offscreen, #priceblock_ourprice, #corePrice_feature_div .a-offscreen");
+        if (el) preco = el.getAttribute("content") || el.textContent || "";
+      }
+      try { if (imagem) imagem = new URL(imagem, base).href; } catch { imagem = ""; }
+      titulo = limparTitulo(titulo);
+      const bloqueado = /^(amazon\.com(\.br)?|robot check|access denied|just a moment|attention required|captcha)/i.test(titulo);
+      if (bloqueado && !imagem) return null;
+      return { titulo: bloqueado ? "" : titulo, imagem: linkSeguro(imagem), preco: paraCentavos(preco) };
+    } finally {
+      clearTimeout(t);
+    }
+  }
+  async function imagemParaDados(url) {
+    const r = await fetch(url, { credentials: "omit" });
+    if (!r.ok) throw new Error("imagem");
+    return reduzirImagem(await r.blob());
+  }
+  async function buscarDoLink(automatico) {
+    const link = extrairLink($("f-link").value);
+    if (!link) {
+      if (!automatico) $("f-link-msg").textContent = "Cole primeiro o link do produto.";
+      return;
+    }
+    $("f-link").value = link;
+    const minha = ++buscaAtual;
+    $("f-buscar").disabled = true;
+    $("f-link-msg").textContent = "Lendo a página da loja…";
+    try {
+      const d = await lerPagina(link);
+      if (minha !== buscaAtual) return;
+      if (!d || (!d.titulo && !d.imagem && !d.preco)) throw new Error("vazio");
+      const achei = [];
+      if (d.titulo && !$("f-nome").value.trim()) { $("f-nome").value = d.titulo; achei.push("o nome"); }
+      if (d.preco && !paraCentavos($("f-preco").value)) { $("f-preco").value = paraTexto(d.preco); achei.push("o preço"); }
+      if (d.imagem && !fotoForm) {
+        try { fotoForm = await imagemParaDados(d.imagem); } catch { fotoForm = d.imagem; }
+        if (minha !== buscaAtual) return;
+        achei.push("a foto");
+      }
+      mostrarFotoForm();
+      $("f-link-msg").textContent = achei.length
+        ? `Peguei ${achei.join(", ").replace(/, ([^,]*)$/, " e $1")} da página. Confira antes de salvar.`
+        : "Li a página, mas os campos já estavam preenchidos.";
+    } catch {
+      if (minha !== buscaAtual) return;
+      $("f-link-msg").textContent = NO_APP
+        ? "A loja não deixou ler a página. Preencha o nome e o preço; a foto você escolhe pelo botão."
+        : "Neste navegador a loja não deixa ler a página. Preencha o nome e o preço (o link fica guardado do mesmo jeito).";
+    } finally {
+      if (minha === buscaAtual) $("f-buscar").disabled = false;
+    }
+  }
+  $("f-buscar").addEventListener("click", () => buscarDoLink(false));
+  $("f-link").addEventListener("paste", () => setTimeout(() => { if (!$("f-nome").value.trim()) buscarDoLink(true); }, 0));
+
+  // O app Android chama isto quando alguém compartilha um link de outra loja com o Cofrinho.
+  window.cofrinhoCompartilhado = (texto) => {
+    const link = extrairLink(texto);
+    if (!link) return;
+    if (aberta) { veioDaLista = false; history.replaceState(null, "", location.pathname + location.search); render(); }
+    abrirDialogo(null, link);
+  };
+
+  // ---------- backup ----------
+  const textoBackup = () => JSON.stringify({ app: "cofrinho", versao: 1, gerado: new Date().toISOString(), metas });
+  $("bk-gerar").addEventListener("click", () => {
+    $("bk-texto").value = textoBackup();
+    const n = visiveis().length;
+    $("bk-msg").textContent = `Backup de ${n} ${n === 1 ? "meta" : "metas"} pronto. Copie e guarde num lugar seguro.`;
+  });
+  $("bk-copiar").addEventListener("click", async () => {
+    if (!$("bk-texto").value) $("bk-texto").value = textoBackup();
+    try { await navigator.clipboard.writeText($("bk-texto").value); $("bk-msg").textContent = "Copiado."; }
+    catch { $("bk-texto").select(); $("bk-msg").textContent = "Selecionei o texto: use Copiar do teclado."; }
+  });
+  $("bk-baixar").addEventListener("click", () => {
+    const blob = new Blob([textoBackup()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cofrinho-backup-${hojeISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    $("bk-msg").textContent = "Arquivo de backup gerado.";
+  });
+  $("bk-restaurar").addEventListener("click", () => {
+    let obj = null;
+    try { obj = JSON.parse($("bk-texto").value.trim()); } catch { obj = null; }
+    if (!obj || !obj.metas || typeof obj.metas !== "object") { $("bk-msg").textContent = "Esse texto não é um backup do Cofrinho."; return; }
+    let n = 0;
+    for (const [id, d] of Object.entries(obj.metas)) {
+      const m = normalizarMeta(d, id);
+      if (!m) continue;
+      const atual = metas[m.id];
+      if (!atual || m.atualizado >= atual.atualizado) {
+        metas[m.id] = m;
+        m.atualizado = Math.max(Date.now(), (atual ? atual.atualizado : 0) + 1);
+        n++;
+      }
+    }
+    gravarLocal();
+    agendarSync();
+    render();
+    $("bk-msg").textContent = n ? `Restaurei ${n} ${n === 1 ? "meta" : "metas"}.` : "Nada para restaurar: as metas daqui já são as mais novas.";
+  });
+
+  // ---------- sincronização (Firebase: login por e-mail e Realtime Database) ----------
+  // Cada meta fica em usuarios/<id>/cofrinho/<id da meta>. Vale a versão alterada por último.
+  // Usa o mesmo projeto e as mesmas regras do Caixa do Mês (firebase-regras.json).
+  const FIREBASE_FIXO = { apiKey: "", databaseURL: "" };
+  const CHAVE_FIREBASE = PREFIXO + "firebase";
+  const CHAVE_SESSAO = PREFIXO + "sessao";
+  let FIREBASE = FIREBASE_FIXO;
+  if (!FIREBASE_FIXO.apiKey) {
+    try { FIREBASE = JSON.parse(localStorage.getItem(CHAVE_FIREBASE) || "null") || { apiKey: "", databaseURL: "" }; }
+    catch { FIREBASE = { apiKey: "", databaseURL: "" }; }
+  }
+  const AUTH_URL = "https://identitytoolkit.googleapis.com/v1";
+  const TOKEN_URL = "https://securetoken.googleapis.com/v1/token";
+  let sessao = null;
+  let sync = { estado: "", hora: 0 };
+  let sincronizando = null;
+  let deNovo = false;
+  let timerSync = 0;
+
+  const syncConfigurado = () => !!(FIREBASE.apiKey && FIREBASE.databaseURL);
+  try { sessao = JSON.parse(localStorage.getItem(CHAVE_SESSAO) || "null"); } catch { sessao = null; }
+  function gravarSessao() {
+    try {
+      if (sessao) localStorage.setItem(CHAVE_SESSAO, JSON.stringify(sessao));
+      else localStorage.removeItem(CHAVE_SESSAO);
+    } catch { /* sem armazenamento: a sessão vale só nesta tela */ }
+  }
+
+  function setStatusTexto(s, texto) { $("status").dataset.s = s; $("status").textContent = texto; }
+  function mostrarStatus() {
+    const hora = sync.hora ? new Date(sync.hora).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "";
+    if (!sessao) return setStatusTexto("ok", "Salvo aqui");
+    if (sync.estado === "sincronizando") return setStatusTexto("salvando", "Sincronizando…");
+    if (sync.estado === "offline") return setStatusTexto("salvando", "Sem internet: salvo aqui");
+    if (sync.estado === "erro") return setStatusTexto("erro", "Erro ao sincronizar");
+    if (sync.estado === "ok") return setStatusTexto("ok", `Sincronizado${hora ? ` às ${hora}` : ""}`);
+    return setStatusTexto("ok", "Salvo aqui");
+  }
+  function setSync(estado, msg) {
+    sync.estado = estado;
+    if (estado === "ok") sync.hora = Date.now();
+    if (msg !== undefined) $("sync-msg").textContent = msg;
+    mostrarStatus();
+  }
+
+  const ERROS_LOGIN = {
+    EMAIL_EXISTS: "Já existe uma conta com esse e-mail. Use Entrar.",
+    EMAIL_NOT_FOUND: "E-mail ou senha incorretos.",
+    INVALID_PASSWORD: "E-mail ou senha incorretos.",
+    INVALID_LOGIN_CREDENTIALS: "E-mail ou senha incorretos.",
+    INVALID_EMAIL: "Esse e-mail não é válido.",
+    MISSING_PASSWORD: "Digite a senha.",
+    WEAK_PASSWORD: "A senha precisa ter pelo menos 6 caracteres.",
+    TOO_MANY_ATTEMPTS_TRY_LATER: "Muitas tentativas. Espere alguns minutos e tente de novo.",
+    USER_DISABLED: "Essa conta foi desativada.",
+    OPERATION_NOT_ALLOWED: "O login por e-mail não está ativado no Firebase.",
+  };
+  class ErroSync extends Error {
+    constructor(codigo, offline) { super(codigo); this.codigo = codigo; this.offline = !!offline; }
+  }
+  async function chamar(url, opcoes) {
+    let r;
+    try { r = await fetch(url, opcoes); } catch { throw new ErroSync("SEM_INTERNET", true); }
+    const j = await r.json().catch(() => null);
+    if (!r.ok) {
+      const msg = (j && j.error && (j.error.message || j.error)) || `HTTP_${r.status}`;
+      throw new ErroSync(String(msg).split(" ")[0].replace(/:$/, ""));
+    }
+    return j;
+  }
+  const postarJSON = (url, corpo) => chamar(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+
+  async function token() {
+    if (sessao.expira - Date.now() > 60000) return sessao.idToken;
+    try {
+      const j = await chamar(`${TOKEN_URL}?key=${FIREBASE.apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(sessao.refreshToken)}`,
+      });
+      Object.assign(sessao, { idToken: j.id_token, refreshToken: j.refresh_token, expira: Date.now() + Number(j.expires_in) * 1000 });
+      gravarSessao();
+      return sessao.idToken;
+    } catch (e) {
+      if (/^(TOKEN_EXPIRED|USER_DISABLED|USER_NOT_FOUND|INVALID_REFRESH_TOKEN)$/.test(e.codigo)) {
+        sair("Sua sessão expirou. Entre de novo para sincronizar.");
+      }
+      throw e;
+    }
+  }
+  const urlCofrinho = async () => `${FIREBASE.databaseURL.replace(/\/+$/, "")}/usuarios/${sessao.uid}/cofrinho.json?auth=${encodeURIComponent(await token())}`;
+
+  function agendarSync() {
+    if (!sessao || !syncConfigurado()) return;
+    clearTimeout(timerSync);
+    timerSync = setTimeout(() => sincronizar(), 700);
+  }
+
+  function sincronizar(msgOk) {
+    if (!sessao || !syncConfigurado()) return Promise.resolve();
+    if (sincronizando) { deNovo = true; return sincronizando; }
+    sincronizando = (async () => {
+      setSync("sincronizando");
+      try {
+        const remoto = (await chamar(await urlCofrinho())) || {};
+        const enviar = {};
+        let trouxe = false;
+        for (const [id, d] of Object.entries(remoto)) {
+          const r = normalizarMeta(d, id);
+          if (!r) continue;
+          const l = metas[r.id];
+          if (!l || r.atualizado > l.atualizado) { metas[r.id] = r; trouxe = true; }
+          else if (l.atualizado > r.atualizado) enviar[l.id] = l;
+        }
+        for (const id of Object.keys(metas)) if (!(id in remoto)) enviar[id] = metas[id];
+        if (Object.keys(enviar).length) {
+          await chamar(await urlCofrinho(), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(enviar) });
+        }
+        if (trouxe) {
+          gravarLocal();
+          const dlgAberto = $("dlg").open;
+          if (!dlgAberto) render();
+        }
+        setSync("ok", msgOk);
+      } catch (e) {
+        if (e.offline) setSync("offline", "Sem internet agora. Suas mudanças ficam salvas aqui e vão quando a conexão voltar.");
+        else if (sessao) setSync("erro", e.codigo === "Permission" || e.codigo === "HTTP_401"
+          ? "O Firebase recusou o acesso. Confira as regras do Realtime Database."
+          : `Não foi possível sincronizar (${e.codigo}).`);
+      } finally {
+        sincronizando = null;
+        if (deNovo) { deNovo = false; agendarSync(); }
+      }
+    })();
+    return sincronizando;
+  }
+
+  function renderSync() {
+    $("sync-config").hidden = syncConfigurado();
+    $("sync-config-trocar").hidden = !!FIREBASE_FIXO.apiKey;
+    $("sync-fora").hidden = !syncConfigurado() || !!sessao;
+    $("sync-dentro").hidden = !sessao;
+    if (sessao) $("sync-quem").textContent = sessao.email;
+    mostrarStatus();
+  }
+  function sair(msg) {
+    sessao = null;
+    gravarSessao();
+    sync = { estado: "", hora: 0 };
+    renderSync();
+    $("sync-msg").textContent = msg || "Você saiu. As metas continuam salvas neste aparelho.";
+  }
+  async function entrar(criar) {
+    const email = $("sync-email").value.trim();
+    const senha = $("sync-senha").value;
+    if (!email || !senha) { $("sync-msg").textContent = "Digite o e-mail e a senha."; return; }
+    $("sync-msg").textContent = criar ? "Criando conta…" : "Entrando…";
+    try {
+      const j = await postarJSON(`${AUTH_URL}/accounts:${criar ? "signUp" : "signInWithPassword"}?key=${FIREBASE.apiKey}`,
+        { email, password: senha, returnSecureToken: true });
+      sessao = { email: j.email || email, uid: j.localId, idToken: j.idToken, refreshToken: j.refreshToken, expira: Date.now() + Number(j.expiresIn) * 1000 };
+      gravarSessao();
+      $("sync-senha").value = "";
+      renderSync();
+      await sincronizar(criar
+        ? "Conta criada. No outro aparelho, use Entrar com o mesmo e-mail e senha."
+        : "Pronto. As metas deste aparelho e as da nuvem foram juntadas.");
+    } catch (e) {
+      $("sync-msg").textContent = e.offline ? "Sem internet. Conecte-se para entrar." : ERROS_LOGIN[e.codigo] || `Não foi possível entrar (${e.codigo}).`;
+    }
+  }
+  function lerConfig(texto) {
+    const pegar = (nome) => {
+      const m = texto.match(new RegExp(`["']?${nome}["']?\\s*[:=]\\s*["'\`]([^"'\`]+)["'\`]`));
+      return m ? m[1].trim() : "";
+    };
+    return { apiKey: pegar("apiKey"), databaseURL: pegar("databaseURL").replace(/\/+$/, "") };
+  }
+  $("sync-config-salvar").addEventListener("click", () => {
+    const cfg = lerConfig($("sync-config-texto").value);
+    if (!/^AIza[\w-]{20,}$/.test(cfg.apiKey)) {
+      $("sync-msg").textContent = "Não achei o apiKey (começa com AIza). Cole o código firebaseConfig inteiro.";
+      return;
+    }
+    if (!/^https:\/\/[\w.-]+\.(firebaseio\.com|firebasedatabase\.app)$/.test(cfg.databaseURL)) {
+      $("sync-msg").textContent = "Não achei o databaseURL. Crie o Realtime Database antes e copie o código de novo.";
+      return;
+    }
+    FIREBASE = cfg;
+    try { localStorage.setItem(CHAVE_FIREBASE, JSON.stringify(cfg)); } catch { /* vale só nesta tela */ }
+    $("sync-config-texto").value = "";
+    $("sync-msg").textContent = "Sincronização ligada. Agora entre (ou crie a conta, se for a primeira vez).";
+    renderSync();
+  });
+  $("sync-config-trocar").addEventListener("click", () => {
+    FIREBASE = { apiKey: "", databaseURL: "" };
+    try { localStorage.removeItem(CHAVE_FIREBASE); } catch { /* nada a apagar */ }
+    $("sync-msg").textContent = "";
+    renderSync();
+  });
+  $("sync-entrar").addEventListener("click", () => entrar(false));
+  $("sync-criar").addEventListener("click", () => entrar(true));
+  $("sync-senha").addEventListener("keydown", (e) => { if (e.key === "Enter") entrar(false); });
+  $("sync-agora").addEventListener("click", () => sincronizar("Sincronizado agora."));
+  $("sync-sair").addEventListener("click", () => sair());
+  $("sync-esqueci").addEventListener("click", async () => {
+    const email = $("sync-email").value.trim();
+    if (!email) { $("sync-msg").textContent = "Digite seu e-mail acima e toque de novo em Esqueci a senha."; return; }
+    try {
+      await postarJSON(`${AUTH_URL}/accounts:sendOobCode?key=${FIREBASE.apiKey}`, { requestType: "PASSWORD_RESET", email });
+      $("sync-msg").textContent = `Mandamos um e-mail para ${email} com o link para criar uma senha nova.`;
+    } catch (e) {
+      $("sync-msg").textContent = e.offline ? "Sem internet agora." : ERROS_LOGIN[e.codigo] || `Não foi possível enviar o e-mail (${e.codigo}).`;
+    }
+  });
+
+  window.addEventListener("focus", () => sincronizar());
+  window.addEventListener("online", () => sincronizar());
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") sincronizar(); });
+  setInterval(() => { if (document.visibilityState === "visible") sincronizar(); }, 30000);
+  // Outra aba do mesmo navegador mudou as metas.
+  window.addEventListener("storage", (e) => { if (e.key === CHAVE_DADOS) { metas = carregarLocal(); if (!$("dlg").open) render(); } });
+
+  // ---------- início ----------
+  metas = carregarLocal();
+  renderSync();
+  render();
+  sincronizar();
+})();
+</script>
+</body>
+</html>

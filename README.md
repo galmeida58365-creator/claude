@@ -4,6 +4,8 @@ Organizador de finanças mensal em uma única página (HTML + CSS + JavaScript, 
 
 **Quer usar o app?** Siga o [PASSO-A-PASSO.md](PASSO-A-PASSO.md): instalar no celular, abrir no computador e ligar a sincronização entre os dois, sem precisar saber programar.
 
+> **Também aqui:** o [Cofrinho](cofrinho/README.md), um app separado para juntar dinheiro para comprar uma coisa: você cola o link do produto, diz o preço e acompanha quanto já guardou e quanto falta. Android: `dist/Cofrinho.apk`.
+
 ## O que faz
 
 - **Até 2 fontes de renda** por mês (nome + valor).
