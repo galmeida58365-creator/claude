@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- A foto inteira fica no fundo; o Android mostra o centro dela, no formato do ícone do celular. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/icone_fundo" />
-    <foreground android:drawable="@drawable/icone_frente" />
+    <background android:drawable="@mipmap/ic_launcher_foto" />
+    <foreground android:drawable="@android:color/transparent" />
 </adaptive-icon>
