@@ -2,3 +2,6 @@
 *.p12
 *.jks
 *.keystore
+
+# Python
+__pycache__/
