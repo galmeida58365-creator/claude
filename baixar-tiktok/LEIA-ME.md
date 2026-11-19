@@ -1,6 +1,26 @@
 # Baixar TikTok
 
-Programa para Windows que baixa vídeos do TikTok **na melhor qualidade disponível e sem marca d'água**. Você cola o link e ele baixa sozinho.
+Baixa vídeos do TikTok **na melhor qualidade disponível e sem marca d'água**. Tem versão para **celular Android** e para **Windows**.
+
+# No celular (Android 10 ou mais novo)
+
+## Instalar
+
+1. Baixe o arquivo **`dist/BaixarTikTok.apk`** no celular e toque nele.
+2. Se o celular avisar que não pode instalar apps de fora da Play Store, toque em **Configurações** e ligue **Permitir desta fonte**. Volte e toque em **Instalar**.
+3. Se aparecer o aviso do Play Protect, toque em **Mais detalhes → Instalar mesmo assim**. O aviso aparece porque o app não veio da Play Store.
+
+## Usar
+
+- **Pelo TikTok:** no vídeo, toque em **Compartilhar**. Na lista de apps (às vezes em **Mais** ou **Outros**), escolha **Baixar TikTok**. O app abre e o vídeo baixa sozinho.
+- **Copiando o link:** no TikTok, toque em **Compartilhar → Copiar link** e abra o Baixar TikTok. Ele percebe o link copiado e baixa.
+- **Colando:** cole o link no campo ou toque em **Colar e baixar**.
+
+Os vídeos ficam na **galeria**, na pasta **Movies/TikTok**. Toque num vídeo da lista para assistir.
+
+Para achar o vídeo, o app abre a página dele por dentro, como um navegador. Se o TikTok mostrar uma verificação ou um botão, a página aparece no app: é só resolver que o download continua.
+
+# No computador (Windows)
 
 ## Instalar (só na primeira vez)
 
@@ -8,7 +28,7 @@ Programa para Windows que baixa vídeos do TikTok **na melhor qualidade disponí
    Na primeira tela do instalador, **marque "Add python.exe to PATH"** e clique em **Install Now**.
 2. Baixe esta pasta `baixar-tiktok` para o computador (por exemplo, na Área de Trabalho).
 
-## Usar
+## Usar no computador
 
 1. Dê dois cliques em **`Abrir-Baixar-TikTok.bat`**. Ele atualiza o que precisa e abre o programa.
 2. No TikTok (site ou app), toque em **Compartilhar → Copiar link**.
@@ -37,7 +57,15 @@ Ele pega a maior resolução que o TikTok oferece para o vídeo (normalmente 108
 
 Baixe vídeos para assistir offline ou guardar o que é seu. Para repostar o vídeo de outra pessoa, peça autorização e dê o crédito: os vídeos têm direitos autorais de quem criou.
 
+## Gerar o APK de novo
+
+```sh
+baixar-tiktok/android/build.sh
+```
+
+Mesmo esquema do app Caixa do Mês: baixa as ferramentas, compila e assina com a chave `baixar-tiktok/android/baixar-tiktok.p12`. A chave é criada na primeira vez e não vai para o repositório. Guarde-a: um APK assinado com outra chave não instala por cima do antigo. Aumente `VERSAO_CODIGO` no `build.sh` a cada versão.
+
 ---
 
-Funciona também em Mac e Linux: `python3 -m pip install -U yt-dlp` e depois `python3 baixar_tiktok.py`.
+O programa do computador funciona também em Mac e Linux: `python3 -m pip install -U yt-dlp` e depois `python3 baixar_tiktok.py`.
 Usa o [yt-dlp](https://github.com/yt-dlp/yt-dlp) por baixo.
