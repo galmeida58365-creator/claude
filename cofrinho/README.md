@@ -49,4 +49,4 @@ O painel **Ligar com o Caixa do Mês** mostra se está ligado. Entram os meses d
 cofrinho/android/build.sh
 ```
 
-Usa as mesmas ferramentas do Caixa do Mês (`android/embutir_fontes.py`, `android/alinhar.py`, `android/Assina.java`). Na primeira vez cria a chave `cofrinho/android/cofrinho.p12`, que **não vai para o repositório**: guarde-a e use sempre a mesma, para que uma versão nova instale por cima sem perder os dados. Aumente `VERSAO_CODIGO` no `build.sh` a cada versão. Os ícones saem de `node cofrinho/android/gerar_icones.js`.
+Usa as mesmas ferramentas do Caixa do Mês (`android/embutir_fontes.py`, `android/alinhar.py`, `android/Assina.java`). Na primeira vez cria a chave `cofrinho/android/cofrinho.p12`, que **não vai para o repositório**: guarde-a e use sempre a mesma, para que uma versão nova instale por cima sem perder os dados. Aumente `VERSAO_CODIGO` no `build.sh` a cada versão. Os ícones saem de `node cofrinho/android/gerar_icones.js`: ele usa a imagem `cofrinho/android/icone.jpg` (o enquadramento fica em `FOTO`, no começo do script); sem essa imagem, desenha o pote de moedas.
