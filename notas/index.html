@@ -130,6 +130,24 @@
   .aviso .botoes { display: flex; flex-wrap: wrap; gap: 8px; }
   .aviso .btn-sec { background: var(--card); }
 
+  .abas {
+    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px;
+  }
+  .aba {
+    display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 0;
+    background: transparent; color: var(--muted); border: 0; border-radius: 10px; padding: 10px 12px;
+    font-family: var(--font-display); font-weight: 800; font-size: 1.05rem;
+  }
+  .aba:hover { color: var(--ink); background: var(--field); }
+  .aba[aria-selected="true"] { background: var(--accent); color: var(--card); }
+  .aba-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .aba-conta {
+    font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums;
+    padding: 1px 7px; border-radius: 999px; background: var(--field); color: var(--muted);
+  }
+  .aba[aria-selected="true"] .aba-conta { background: color-mix(in srgb, var(--card) 22%, transparent); color: var(--card); }
+
   .lista { display: grid; gap: 10px; }
   .ficha { background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
   .cabeca {
@@ -218,6 +236,8 @@
     <p>Coloque os pontos que você já tirou. O app mostra quantos pontos ainda faltam para passar em cada matéria.</p>
   </header>
 
+  <nav class="abas" id="abas" role="tablist" aria-label="Escolas" hidden></nav>
+
   <div class="topo">
     <div class="resumo" id="resumo"></div>
     <span class="status" id="status" aria-live="polite">Carregando…</span>
@@ -228,15 +248,7 @@
     <button type="button" class="btn-sec" id="limpar-exemplo">Começar do zero</button>
   </div>
 
-  <div class="aviso" id="aviso-boletim" hidden>
-    <span><b>Tem um boletim pronto para carregar.</b> Ele troca as matérias que estão aqui pelas do boletim.</span>
-    <span class="botoes">
-      <button type="button" class="btn-primario" id="carregar-boletim">Carregar boletim</button>
-      <button type="button" class="btn-sec" id="manter-atual">Manter o que tenho</button>
-    </span>
-  </div>
-
-  <section class="lista" id="lista" aria-label="Matérias"></section>
+  <section class="lista" id="lista" role="tabpanel" aria-label="Matérias"></section>
 
   <div><button type="button" class="btn-primario" id="add-materia">+ Adicionar matéria</button></div>
 
@@ -244,7 +256,7 @@
     <h2>Como a conta é feita</h2>
     <p>Cada avaliação vale um número de pontos. O app soma os pontos que você já tirou e mostra quanto falta para chegar ao mínimo da matéria. Por exemplo: três trimestres valendo 30, 30 e 40 pontos, com mínimo de 60 para passar.</p>
     <p>Deixe a nota em branco no que ainda não aconteceu. Se o trimestre ainda está em andamento, coloque os pontos que você já tem e vá atualizando: o app mostra só quanto falta.</p>
-    <p>Toque numa matéria para abrir e mudar as notas.</p>
+    <p>Toque numa matéria para abrir e mudar as notas. Se o app tiver abas, cada uma guarda as matérias de uma escola.</p>
     <p>Pode usar vírgula ou ponto: <code>18,5</code> ou <code>18.5</code>.</p>
   </section>
 </div>
@@ -254,17 +266,24 @@
 (() => {
   "use strict";
   const CHAVE = "quanto-falta-notas-v1";
+  const CHAVE_ABA = "quanto-falta-aba";
   const $ = (id) => document.getElementById(id);
   const novoId = () => Math.random().toString(36).slice(2, 10);
   const txt = (n) => (n === null || n === undefined || n === "" ? "" : String(n).replace(".", ","));
 
   // Matérias que já vêm prontas (colocadas na hora de gerar o app). Sem elas, aparece um exemplo.
   const SEMENTE = window.NOTAS_INICIAIS && Array.isArray(window.NOTAS_INICIAIS.materias) ? window.NOTAS_INICIAIS : null;
-  if (SEMENTE && SEMENTE.tema) document.documentElement.dataset.cor = SEMENTE.tema;
 
-  function deModelo(lista) {
+  // Cada grupo é uma aba (por exemplo Escola e IFES), com as suas matérias e a sua cor.
+  // Sem grupos no boletim, existe um só e as abas nem aparecem.
+  const GRUPO_PADRAO = { id: "escola", nome: "Escola", tema: (SEMENTE && !SEMENTE.grupos && SEMENTE.tema) || "" };
+  const gruposDaSemente = () => (SEMENTE && Array.isArray(SEMENTE.grupos) && SEMENTE.grupos.length
+    ? SEMENTE.grupos.map((g) => ({ id: String(g.id), nome: String(g.nome), tema: g.tema || "" }))
+    : [{ ...GRUPO_PADRAO }]);
+
+  function deModelo(lista, grupoPadrao = GRUPO_PADRAO.id) {
     return lista.map((m) => ({
-      id: novoId(), nome: String(m.nome), minimo: txt(m.minimo),
+      id: novoId(), grupo: m.grupo ? String(m.grupo) : grupoPadrao, nome: String(m.nome), minimo: txt(m.minimo),
       avals: m.avals.map((a) => ({ id: novoId(), nome: String(a.nome), vale: txt(a.vale), nota: txt(a.nota) })),
     }));
   }
@@ -278,7 +297,7 @@
     { nome: "História", minimo: 60, avals: tri(28, 27, null) },
     { nome: "Física", minimo: 60, avals: tri(8, 9, null) },
   ];
-  const materiaNova = () => deModelo([{ nome: "Nova matéria", minimo: 60, avals: tri(null, null, null) }])[0];
+  const materiaNova = () => deModelo([{ grupo: aba, nome: "Nova matéria", minimo: 60, avals: tri(null, null, null) }])[0];
 
   // ---------- números ----------
   function lerNum(t) {
@@ -338,7 +357,8 @@
   }
 
   // ---------- estado e armazenamento ----------
-  let estado = { exemplo: false, semente: null, materias: [] };
+  let estado = { exemplo: false, semente: null, grupos: [{ ...GRUPO_PADRAO }], materias: [] };
+  let aba = GRUPO_PADRAO.id;
   let store = null;   // null = só este navegador ou aparelho
   let timer = null, pendente = false, mexeu = false, fila = Promise.resolve();
   const abertas = new Set();
@@ -347,18 +367,71 @@
     try { const t = localStorage.getItem(CHAVE); return t ? JSON.parse(t) : null; } catch { return null; }
   }
   const valido = (d) => d && Array.isArray(d.materias);
-  const deSalvo = (d) => ({ exemplo: false, semente: d.semente || null, materias: migrar(d.materias) });
+  function deSalvo(d) {
+    const grupos = Array.isArray(d.grupos) && d.grupos.length ? d.grupos : [{ ...GRUPO_PADRAO }];
+    const ids = new Set(grupos.map((g) => g.id));
+    const materias = migrar(d.materias).map((m) => (ids.has(m.grupo) ? m : { ...m, grupo: grupos[0].id }));
+    return juntarSemente({ exemplo: false, semente: d.semente || null, grupos, materias });
+  }
+  // Um app atualizado pode trazer um boletim mais novo. Ele entra no que a pessoa já tem:
+  // grupos e matérias que faltam são criados, e as notas lançadas no boletim substituem as
+  // da mesma avaliação. Nada é apagado, e nota em branco no boletim não apaga nota digitada.
+  let gruposNovos = [], notasNovas = 0;
+  const chave = (t) => String(t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  function juntarSemente(e) {
+    if (!SEMENTE) return e;
+    const grupos = gruposDaSemente();
+    if (Array.isArray(SEMENTE.grupos)) {
+      for (const g of grupos) {
+        if (e.grupos.some((x) => x.id === g.id)) continue;
+        e.grupos.push(g);
+        e.materias.push(...deModelo(SEMENTE.materias.filter((m) => m.grupo === g.id)));
+        gruposNovos.push(g.nome);
+      }
+    }
+    if (e.semente === SEMENTE.versao) return e;
+    for (const sm of SEMENTE.materias) {
+      const grupo = sm.grupo ? String(sm.grupo) : e.grupos[0].id;
+      if (gruposNovos.length && !e.grupos.some((g) => g.id === grupo)) continue;
+      let m = e.materias.find((x) => x.grupo === grupo && chave(x.nome) === chave(sm.nome));
+      if (!m) {
+        m = deModelo([sm], grupo)[0];
+        e.materias.push(m);
+        notasNovas += sm.avals.filter((a) => a.nota !== null && a.nota !== undefined).length;
+        continue;
+      }
+      for (const sa of sm.avals) {
+        const nota = txt(sa.nota);
+        let a = m.avals.find((x) => chave(x.nome) === chave(sa.nome));
+        if (!a) {
+          m.avals.push({ id: novoId(), nome: String(sa.nome), vale: txt(sa.vale), nota });
+          if (nota) notasNovas++;
+        } else if (nota && lerNum(a.nota) !== lerNum(nota)) {
+          a.nota = nota;
+          notasNovas++;
+        }
+      }
+    }
+    e.semente = SEMENTE.versao;
+    return e;
+  }
+  const grupoAtual = () => estado.grupos.find((g) => g.id === aba) || estado.grupos[0];
+  const materiasDaAba = () => estado.materias.filter((m) => m.grupo === grupoAtual().id);
 
   function setStatus(s) {
     const onde = store ? "na sua conta" : "neste aparelho";
     $("status").textContent = {
       ok: `Salvo ${onde}`, salvando: "Salvando…", exemplo: "Exemplo (ainda não salvo)", boletim: "Boletim carregado",
+      novos: [gruposNovos.length ? `${gruposNovos.join(" e ")} ${gruposNovos.length > 1 ? "adicionados" : "adicionado"}` : "",
+        notasNovas ? `${notasNovas} ${notasNovas === 1 ? "nota atualizada" : "notas atualizadas"} pelo boletim` : ""].filter(Boolean).join(" · "),
       erro: "Não foi possível salvar agora. Tente de novo em instantes.",
     }[s] || "";
   }
 
+  let mostrarNovidade = false;   // mantém o aviso de boletim junto até a pessoa mexer
   function mudou() {
     mexeu = true;
+    mostrarNovidade = false;
     if (estado.exemplo) { estado.exemplo = false; $("aviso-exemplo").hidden = true; }
     setStatus("salvando");
     pendente = true;
@@ -368,12 +441,12 @@
   function salvar() {
     clearTimeout(timer);
     pendente = false;
-    const copia = JSON.parse(JSON.stringify({ semente: estado.semente, materias: estado.materias }));
+    const copia = JSON.parse(JSON.stringify({ semente: estado.semente, grupos: estado.grupos, materias: estado.materias }));
     try { localStorage.setItem(CHAVE, JSON.stringify(copia)); } catch { /* armazenamento bloqueado */ }
     fila = fila.then(async () => {
       try {
         if (store) await store.set({ ...copia, atualizado: Date.now() });
-        setStatus("ok");
+        setStatus(mostrarNovidade ? "novos" : "ok");
       } catch { setStatus(store ? "erro" : "ok"); }
     });
   }
@@ -503,35 +576,55 @@
 
   function atualizarResumo() {
     const c = { ok: 0, precisa: 0 };
-    for (const m of estado.materias) {
+    const lista = materiasDaAba();
+    for (const m of lista) {
       const s = calcular(m).s;
       if (s === "garantido" || s === "aprovado") c.ok++;
       else if (s === "precisa") c.precisa++;
     }
-    const total = estado.materias.length;
+    const total = lista.length;
     const partes = [`<span class="chip neutro num">${total} ${total === 1 ? "matéria" : "matérias"}</span>`];
     if (c.ok) partes.push(`<span class="chip ok num">${c.ok} já ${c.ok === 1 ? "passou" : "passaram"}</span>`);
     if (c.precisa) partes.push(`<span class="chip num">${c.precisa} ainda ${c.precisa === 1 ? "precisa" : "precisam"} de pontos</span>`);
     $("resumo").innerHTML = partes.join("");
   }
 
+  function desenharAbas() {
+    const g = grupoAtual();
+    aba = g.id;
+    if (g.tema) document.documentElement.dataset.cor = g.tema;
+    else delete document.documentElement.dataset.cor;
+    const nav = $("abas");
+    nav.hidden = estado.grupos.length < 2;
+    nav.innerHTML = estado.grupos.map((x) => {
+      const n = estado.materias.filter((m) => m.grupo === x.id).length;
+      const sel = x.id === g.id;
+      return `<button type="button" class="aba" role="tab" id="aba-${esc(x.id)}" data-grupo="${esc(x.id)}" aria-selected="${sel}" aria-controls="lista" tabindex="${sel ? 0 : -1}">
+        <span class="aba-nome">${esc(x.nome)}</span><span class="aba-conta" aria-label="${n} matérias">${n}</span></button>`;
+    }).join("");
+    $("lista").setAttribute("aria-labelledby", "aba-" + g.id);
+  }
+
   function desenhar() {
-    const lista = $("lista");
-    if (!estado.materias.length) {
+    desenharAbas();
+    const lista = $("lista"), materias = materiasDaAba();
+    if (!materias.length) {
       lista.innerHTML = `<div class="vazio"><h2>Nenhuma matéria ainda</h2><p>Adicione a primeira matéria e coloque as notas que você já tem.</p></div>`;
     } else {
-      lista.innerHTML = estado.materias.map(htmlMateria).join("");
-      estado.materias.forEach(atualizarMateria);
+      lista.innerHTML = materias.map(htmlMateria).join("");
+      materias.forEach(atualizarMateria);
     }
     $("aviso-exemplo").hidden = !estado.exemplo || !estado.materias.length;
-    $("aviso-boletim").hidden = !SEMENTE || estado.exemplo || estado.semente === SEMENTE.versao;
     atualizarResumo();
   }
 
   // Poucas matérias: já abre todas. Muitas: ficam fechadas, mostrando só o que falta.
   function abrirPoucas() {
     abertas.clear();
-    if (estado.materias.length <= 3) estado.materias.forEach((m) => abertas.add(m.id));
+    for (const g of estado.grupos) {
+      const lista = estado.materias.filter((m) => m.grupo === g.id);
+      if (lista.length <= 3) lista.forEach((m) => abertas.add(m.id));
+    }
   }
 
   // ---------- interação ----------
@@ -558,6 +651,25 @@
     atualizarMateria(m);
     atualizarResumo();
     mudou();
+  });
+
+  function irPara(id, foco) {
+    if (id === aba || !estado.grupos.some((g) => g.id === id)) return;
+    aba = id;
+    try { localStorage.setItem(CHAVE_ABA, id); } catch { /* só lembra nesta abertura */ }
+    desenhar();
+    if (foco) $("aba-" + id)?.focus();
+  }
+  $("abas").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-grupo]");
+    if (b) irPara(b.dataset.grupo, false);
+  });
+  $("abas").addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const i = estado.grupos.findIndex((g) => g.id === aba);
+    const j = (i + (e.key === "ArrowRight" ? 1 : -1) + estado.grupos.length) % estado.grupos.length;
+    e.preventDefault();
+    irPara(estado.grupos[j].id, true);
   });
 
   const confirmando = new Map();
@@ -611,27 +723,28 @@
     abrirENomear(m);
   });
   $("limpar-exemplo").addEventListener("click", () => {
-    estado.materias = [materiaNova()];
+    estado.materias = estado.materias.filter((m) => m.grupo !== aba).concat(materiaNova());
     abertas.clear();
     abrirENomear(estado.materias[0]);
-  });
-  $("carregar-boletim").addEventListener("click", () => {
-    estado.materias = deModelo(SEMENTE.materias);
-    estado.semente = SEMENTE.versao;
-    abrirPoucas();
-    desenhar(); mudou();
-  });
-  $("manter-atual").addEventListener("click", () => {
-    estado.semente = SEMENTE.versao;
-    desenhar(); mudou();
   });
 
   // ---------- início ----------
   const local = lerLocal();
   if (valido(local)) estado = deSalvo(local);
-  else if (SEMENTE) estado = { exemplo: false, semente: SEMENTE.versao, materias: deModelo(SEMENTE.materias) };
-  else estado = { exemplo: true, semente: null, materias: deModelo(EXEMPLO) };
-  const inicio = valido(local) ? "ok" : SEMENTE ? "boletim" : "exemplo";
+  else if (SEMENTE) {
+    const grupos = gruposDaSemente();
+    estado = { exemplo: false, semente: SEMENTE.versao, grupos, materias: deModelo(SEMENTE.materias, grupos[0].id) };
+  } else estado = { exemplo: true, semente: null, grupos: [{ ...GRUPO_PADRAO }], materias: deModelo(EXEMPLO) };
+  const houveNovidade = () => gruposNovos.length > 0 || notasNovas > 0;
+  const inicio = houveNovidade() ? "novos" : valido(local) ? "ok" : SEMENTE ? "boletim" : "exemplo";
+  try { aba = localStorage.getItem(CHAVE_ABA) || aba; } catch { /* começa na primeira aba */ }
+  if (houveNovidade()) {
+    // Grupo recém-chegado: abre direto nele. Em qualquer novidade, grava logo a junção.
+    if (gruposNovos.length) aba = estado.grupos.find((g) => g.nome === gruposNovos[0]).id;
+    mostrarNovidade = true;
+    pendente = true;
+    setTimeout(salvarAgora, 0);
+  }
   abrirPoucas();
   desenhar();
   setStatus(inicio);
@@ -646,11 +759,13 @@
       if (valido(dados)) {
         // Só troca a tela se a pessoa ainda não começou a mexer neste aparelho.
         if (!mexeu) {
+          gruposNovos = []; notasNovas = 0;
           estado = deSalvo(dados);
           abrirPoucas();
           desenhar();
+          if (houveNovidade()) { mostrarNovidade = true; pendente = true; salvarAgora(); }
         }
-        setStatus(pendente ? "salvando" : "ok");
+        if (!houveNovidade()) setStatus(pendente ? "salvando" : "ok");
       } else if (valido(local) && !pendente) {
         salvar(); // leva o que já estava neste navegador para a conta
       } else if (!pendente) {

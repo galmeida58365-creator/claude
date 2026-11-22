@@ -9,8 +9,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSAO_CODIGO=3
-VERSAO_NOME=1.2
+VERSAO_CODIGO=4
+VERSAO_NOME=1.3
 SENHA=quantofalta   # senha da chave de assinatura em quanto-falta.p12
 
 NOME_APP=${NOME_APP:-Quanto Falta}        # nome que aparece na tela do celular
