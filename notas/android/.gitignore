@@ -4,3 +4,5 @@ build/
 *.p12
 *.jks
 *.keystore
+# Ícone com foto pessoal: não vai para o repositório.
+res-foto/
