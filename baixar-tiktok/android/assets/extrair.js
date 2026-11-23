@@ -35,14 +35,19 @@ function lerChave(chave) {
   return { codec: m[1], res: res === 540 ? 576 : res, br: parseInt(m[3], 10) };
 }
 
+function ehCapa(u) {
+  return typeof u === 'string' && /^https?:\/\//.test(u);
+}
+
 function ehHttp(u) {
   return typeof u === 'string' && /^https?:\/\//.test(u) && !/^https?:\/\/www\.tiktok\.com\//.test(u);
 }
 
-// Lista de endereços sem marca d'água, do melhor para o pior:
-// maior resolução primeiro; na mesma resolução, H.264 (toca em qualquer
-// celular) antes do H.265; depois, maior taxa de bits. O bytevc2 não toca
-// em lugar nenhum e fica de fora; a versão com marca d'água só entra no fim.
+// Lista de endereços sem marca d'água, do melhor para o pior (mesma ordem
+// que o yt-dlp usa): maior resolução primeiro; na mesma resolução, H.265
+// (a versão de melhor qualidade do TikTok; todo Android 10+ toca) antes do
+// H.264; depois, maior taxa de bits. O bytevc2 não toca em lugar nenhum e
+// fica de fora; a versão com marca d'água só entra no fim.
 function escolherVideos(item) {
   var video = (item && item.video) || {};
   var opcoes = [];
@@ -56,12 +61,12 @@ function escolherVideos(item) {
       if (!ehHttp(u) || /\/media-video-hvc1\//.test(u)) return; // hvc1: às vezes vem sem som
       opcoes.push({
         url: u, res: res,
-        h264: codec.indexOf('h264') >= 0 ? 1 : 0,
+        hevc: /bytevc1|h265|hevc|hvc1/.test(codec) ? 1 : 0,
         br: info.br || b.Bitrate || 0,
       });
     });
   });
-  opcoes.sort(function (a, b) { return (b.res - a.res) || (b.h264 - a.h264) || (b.br - a.br); });
+  opcoes.sort(function (a, b) { return (b.res - a.res) || (b.hevc - a.hevc) || (b.br - a.br); });
 
   var urls = opcoes.map(function (o) { return o.url; });
   var play = video.playAddr;
@@ -97,6 +102,7 @@ function extrair(doc) {
           autor: (autor && (autor.uniqueId || autor.nickname)) || (typeof autor === 'string' ? autor : ''),
           largura: v.width || 0,
           altura: v.height || 0,
+          capa: [v.originCover, v.cover, v.dynamicCover].filter(ehCapa)[0] || '',
           urls: escolha.urls,
           marca: escolha.marca,
         };

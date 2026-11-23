@@ -5,8 +5,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-VERSAO_CODIGO=2
-VERSAO_NOME=1.1
+VERSAO_CODIGO=3
+VERSAO_NOME=1.2
 SENHA=baixartiktok   # senha da chave de assinatura em baixar-tiktok.p12
 
 COMUM=../../android

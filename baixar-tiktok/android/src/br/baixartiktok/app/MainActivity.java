@@ -8,10 +8,15 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,6 +40,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -82,13 +89,12 @@ public class MainActivity extends Activity {
             Pattern.CASE_INSENSITIVE);
 
     static final String PASTA = "Movies/TikTok";
+    static final int MATCH = ViewGroup.LayoutParams.MATCH_PARENT;
     static final long MOSTRAR_PAGINA_APOS = 15_000;   // ms sem achar o vídeo: mostra a página
     static final long DESISTIR_APOS = 120_000;
 
-    static final int VERDE = 0xFF1A7F37;
-    static final int VERMELHO = 0xFFC62828;
-    static final int CINZA = 0xFF666666;
-    static final int DESTAQUE = 0xFFFE2C55;
+    // Cores do tema claro ou escuro, definidas em definirCores().
+    int FUNDO, CARTAO, CAMPO, TEXTO, CINZA, VERDE, VERMELHO, DESTAQUE;
 
     final Handler h = new Handler(Looper.getMainLooper());
     final ArrayDeque<Pedido> fila = new ArrayDeque<>();
@@ -102,14 +108,15 @@ public class MainActivity extends Activity {
     LinearLayout caixaPagina;
     TextView avisoPagina;
     WebView web;
-    TextView vazio;
+    View vazio;
 
     static class Pedido {
         String link, chave;
         long inicio;
         boolean baixando, paginaVisivel;
         Uri arquivo;
-        TextView titulo, situacao;
+        TextView titulo, situacao, capaIcone;
+        ImageView capa;
         ProgressBar barra;
     }
 
@@ -121,28 +128,70 @@ public class MainActivity extends Activity {
         prefs = getSharedPreferences("baixar", MODE_PRIVATE);
         scriptExtrair = "(function(){\n" + lerAsset("extrair.js")
                 + "\nreturn JSON.stringify(extrair(document));\n})()";
+        definirCores();
         montarTela();
         receberIntent(getIntent());
+    }
+
+    void definirCores() {
+        boolean escuro = (getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        FUNDO = escuro ? 0xFF141216 : 0xFFFFF6F7;
+        CARTAO = escuro ? 0xFF1F1C22 : 0xFFFFFFFF;
+        CAMPO = escuro ? 0xFF2B272E : 0xFFF7EFF1;
+        TEXTO = escuro ? 0xFFF3EEF1 : 0xFF1D1B20;
+        CINZA = escuro ? 0xFFADA6AF : 0xFF6F6A72;
+        VERDE = escuro ? 0xFF6BD68A : 0xFF1E8E3E;
+        VERMELHO = escuro ? 0xFFFF8A8A : 0xFFD32F2F;
+        DESTAQUE = 0xFFE5304A; // o vermelho do gorro do ícone
     }
 
     void montarTela() {
         LinearLayout raiz = new LinearLayout(this);
         raiz.setOrientation(LinearLayout.VERTICAL);
-        raiz.setPadding(dp(16), dp(20), dp(16), dp(12));
-        raiz.setBackgroundColor(Color.WHITE);
+        raiz.setPadding(dp(20), dp(20), dp(20), 0);
+        raiz.setBackgroundColor(FUNDO);
 
-        TextView titulo = texto("Baixar TikTok", 24, Color.BLACK);
+        // Cabeçalho: a foto do ícone e o nome do app.
+        LinearLayout topo = new LinearLayout(this);
+        topo.setGravity(Gravity.CENTER_VERTICAL);
+        FrameLayout avatar = new FrameLayout(this);
+        avatar.setBackground(forma(GradientDrawable.OVAL, CARTAO, 0));
+        avatar.setClipToOutline(true);
+        avatar.setElevation(dp(3));
+        ImageView foto = new ImageView(this);
+        foto.setImageResource(R.mipmap.ic_launcher_foto);
+        foto.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        foto.setScaleX(1.5f); // mostra só o centro da foto, como no ícone
+        foto.setScaleY(1.5f);
+        avatar.addView(foto, new FrameLayout.LayoutParams(MATCH, MATCH));
+        LinearLayout.LayoutParams lpAvatar = new LinearLayout.LayoutParams(dp(56), dp(56));
+        lpAvatar.setMargins(dp(2), dp(2), dp(2), dp(2));
+        topo.addView(avatar, lpAvatar);
+        LinearLayout nomes = new LinearLayout(this);
+        nomes.setOrientation(LinearLayout.VERTICAL);
+        nomes.setPadding(dp(14), 0, 0, 0);
+        TextView titulo = texto("Baixar TikTok", 24, TEXTO);
         titulo.setTypeface(Typeface.DEFAULT_BOLD);
-        raiz.addView(titulo);
-        TextView dica = texto("No TikTok, toque em Compartilhar e escolha Baixar TikTok. "
-                + "Ou copie o link e abra este app: o vídeo baixa sozinho.", 14, CINZA);
-        dica.setPadding(0, dp(4), 0, dp(12));
-        raiz.addView(dica);
+        nomes.addView(titulo);
+        nomes.addView(texto("Qualidade máxima, sem marca d'água", 13, CINZA));
+        topo.addView(nomes);
+        raiz.addView(topo);
 
-        LinearLayout linha = new LinearLayout(this);
-        linha.setGravity(Gravity.CENTER_VERTICAL);
+        // Cartão do link.
+        LinearLayout cartaoLink = cartaoBase(20);
+        cartaoLink.setPadding(dp(16), dp(16), dp(16), dp(14));
+        TextView rotulo = texto("Link do vídeo", 13, CINZA);
+        rotulo.setTypeface(Typeface.DEFAULT_BOLD);
+        rotulo.setPadding(dp(2), 0, 0, dp(8));
+        cartaoLink.addView(rotulo);
         campo = new EditText(this);
-        campo.setHint("Cole o link aqui");
+        campo.setHint("https://vm.tiktok.com/...");
+        campo.setHintTextColor(CINZA);
+        campo.setTextColor(TEXTO);
+        campo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+        campo.setBackground(forma(GradientDrawable.RECTANGLE, CAMPO, 14));
+        campo.setPadding(dp(14), dp(12), dp(14), dp(12));
         campo.setSingleLine(true);
         campo.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
         campo.setImeOptions(EditorInfo.IME_ACTION_GO);
@@ -162,39 +211,70 @@ public class MainActivity extends Activity {
                 }
             }
         });
-        linha.addView(campo, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        cartaoLink.addView(campo, new LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT));
         Button colar = botao("Colar e baixar");
         colar.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { colarEBaixar(); }
         });
-        linha.addView(colar);
-        raiz.addView(linha);
+        cartaoLink.addView(colar);
+        TextView ou = texto("ou, no TikTok: Compartilhar → Baixar TikTok", 13, CINZA);
+        ou.setGravity(Gravity.CENTER_HORIZONTAL);
+        ou.setPadding(0, dp(10), 0, 0);
+        cartaoLink.addView(ou, new LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams lpLink = new LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lpLink.topMargin = dp(20);
+        raiz.addView(cartaoLink, lpLink);
 
         // Página do TikTok. Fica com 1 px enquanto tudo vai bem; cresce se precisar de verificação.
         caixaPagina = new LinearLayout(this);
         caixaPagina.setOrientation(LinearLayout.VERTICAL);
-        avisoPagina = texto("", 14, Color.BLACK);
+        avisoPagina = texto("", 14, TEXTO);
         avisoPagina.setVisibility(View.GONE);
-        avisoPagina.setPadding(0, dp(10), 0, dp(6));
-        caixaPagina.addView(avisoPagina);
+        avisoPagina.setBackground(forma(GradientDrawable.RECTANGLE, CAMPO, 14));
+        avisoPagina.setPadding(dp(14), dp(12), dp(14), dp(12));
+        LinearLayout.LayoutParams lpAviso = new LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lpAviso.setMargins(0, dp(14), 0, dp(8));
+        caixaPagina.addView(avisoPagina, lpAviso);
         web = new WebView(this);
         configurarWeb();
-        caixaPagina.addView(web, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
+        caixaPagina.addView(web, new LinearLayout.LayoutParams(MATCH, 1));
         raiz.addView(caixaPagina);
 
+        TextView secao = texto("Seus downloads", 17, TEXTO);
+        secao.setTypeface(Typeface.DEFAULT_BOLD);
+        secao.setPadding(dp(2), dp(20), 0, dp(10));
+        raiz.addView(secao);
+
         ScrollView rolagem = new ScrollView(this);
+        rolagem.setClipToPadding(false);
         lista = new LinearLayout(this);
         lista.setOrientation(LinearLayout.VERTICAL);
-        lista.setPadding(0, dp(12), 0, dp(12));
-        vazio = texto("Os vídeos baixados aparecem aqui e ficam na galeria, na pasta " + PASTA + ".",
-                14, CINZA);
-        vazio.setPadding(0, dp(24), 0, 0);
-        vazio.setGravity(Gravity.CENTER_HORIZONTAL);
+        lista.setPadding(dp(2), dp(2), dp(2), dp(24)); // espaço para a sombra dos cartões
+        vazio = estadoVazio();
         lista.addView(vazio);
         rolagem.addView(lista);
-        raiz.addView(rolagem, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        raiz.addView(rolagem, new LinearLayout.LayoutParams(MATCH, 0, 1));
 
         setContentView(raiz);
+    }
+
+    View estadoVazio() {
+        LinearLayout v = new LinearLayout(this);
+        v.setOrientation(LinearLayout.VERTICAL);
+        v.setGravity(Gravity.CENTER_HORIZONTAL);
+        v.setPadding(dp(24), dp(28), dp(24), 0);
+        TextView emoji = texto("🎬", 40, TEXTO);
+        v.addView(emoji);
+        TextView t = texto("Nenhum vídeo ainda", 16, TEXTO);
+        t.setTypeface(Typeface.DEFAULT_BOLD);
+        t.setPadding(0, dp(8), 0, dp(4));
+        v.addView(t);
+        TextView d = texto("Copie o link de um vídeo no TikTok e volte aqui: o download começa sozinho. "
+                + "Os vídeos ficam na galeria, na pasta " + PASTA + ". Toque num vídeo da lista para assistir.",
+                14, CINZA);
+        d.setGravity(Gravity.CENTER_HORIZONTAL);
+        v.addView(d);
+        return v;
     }
 
     void configurarWeb() {
@@ -223,33 +303,76 @@ public class MainActivity extends Activity {
     }
 
     View cartao(Pedido p) {
-        LinearLayout c = new LinearLayout(this);
-        c.setOrientation(LinearLayout.VERTICAL);
-        c.setPadding(dp(14), dp(12), dp(14), dp(12));
-        GradientDrawable fundo = new GradientDrawable();
-        fundo.setColor(Color.rgb(0xF4, 0xF4, 0xF6));
-        fundo.setCornerRadius(dp(12));
-        c.setBackground(fundo);
-        p.titulo = texto(p.link, 15, Color.BLACK);
-        p.titulo.setSingleLine(true);
+        LinearLayout c = cartaoBase(18);
+        c.setOrientation(LinearLayout.HORIZONTAL);
+        c.setGravity(Gravity.CENTER_VERTICAL);
+        c.setPadding(dp(10), dp(10), dp(14), dp(10));
+        c.setForeground(new RippleDrawable(ColorStateList.valueOf(0x22000000), null,
+                forma(GradientDrawable.RECTANGLE, Color.WHITE, 18)));
+
+        // Miniatura do vídeo (a capa chega junto com o download).
+        FrameLayout moldura = new FrameLayout(this);
+        moldura.setBackground(forma(GradientDrawable.RECTANGLE, CAMPO, 12));
+        moldura.setClipToOutline(true);
+        p.capaIcone = texto("▶", 20, CINZA);
+        p.capaIcone.setGravity(Gravity.CENTER);
+        moldura.addView(p.capaIcone, new FrameLayout.LayoutParams(MATCH, MATCH));
+        p.capa = new ImageView(this);
+        p.capa.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        moldura.addView(p.capa, new FrameLayout.LayoutParams(MATCH, MATCH));
+        c.addView(moldura, new LinearLayout.LayoutParams(dp(60), dp(80)));
+
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        info.setPadding(dp(14), 0, 0, 0);
+        p.titulo = texto(p.link, 15, TEXTO);
+        p.titulo.setTypeface(Typeface.DEFAULT_BOLD);
+        p.titulo.setMaxLines(2);
         p.titulo.setEllipsize(TextUtils.TruncateAt.END);
-        p.situacao = texto("Na fila", 14, CINZA);
+        info.addView(p.titulo);
+        p.situacao = texto("", 13, CINZA);
+        p.situacao.setPadding(dp(10), dp(4), dp(10), dp(4));
+        LinearLayout.LayoutParams lpSit = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lpSit.topMargin = dp(8);
+        info.addView(p.situacao, lpSit);
         p.barra = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         p.barra.setMax(100);
         p.barra.setIndeterminate(true);
+        p.barra.setProgressTintList(ColorStateList.valueOf(DESTAQUE));
+        p.barra.setIndeterminateTintList(ColorStateList.valueOf(DESTAQUE));
+        p.barra.setProgressBackgroundTintList(ColorStateList.valueOf(CAMPO));
         p.barra.setVisibility(View.GONE);
-        c.addView(p.titulo);
-        c.addView(p.situacao);
-        c.addView(p.barra);
+        LinearLayout.LayoutParams lpBarra = new LinearLayout.LayoutParams(MATCH, dp(6));
+        lpBarra.topMargin = dp(8);
+        info.addView(p.barra, lpBarra);
+        c.addView(info, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        situacao(p, "Na fila", CINZA);
+
         final Pedido pedido = p;
         c.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { abrirVideo(pedido); }
         });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.bottomMargin = dp(10);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(MATCH, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(12);
         c.setLayoutParams(lp);
         return c;
+    }
+
+    LinearLayout cartaoBase(int raio) {
+        LinearLayout c = new LinearLayout(this);
+        c.setOrientation(LinearLayout.VERTICAL);
+        c.setBackground(forma(GradientDrawable.RECTANGLE, CARTAO, raio));
+        c.setElevation(dp(2));
+        return c;
+    }
+
+    GradientDrawable forma(int tipo, int cor, int raio) {
+        GradientDrawable g = new GradientDrawable();
+        g.setShape(tipo);
+        g.setColor(cor);
+        if (tipo == GradientDrawable.RECTANGLE) g.setCornerRadius(dp(raio));
+        return g;
     }
 
     // ------------------------------------------------------------------ receber links
@@ -495,6 +618,7 @@ public class MainActivity extends Activity {
         final String qualidade = qualidade(r.optInt("largura"), r.optInt("altura"));
         String desc = r.optString("titulo").trim();
         p.titulo.setText(desc.isEmpty() ? nome : desc);
+        carregarCapa(p, r.optString("capa"), agente, pagina);
 
         // A página já fez o trabalho dela; libera o WebView para o próximo da fila.
         atual = null;
@@ -503,7 +627,7 @@ public class MainActivity extends Activity {
         Uri existente = id.isEmpty() ? null : acharJaBaixado(id);
         if (existente != null) {
             p.arquivo = existente;
-            pronto(p, "Já estava baixado ✓ (toque para ver)");
+            pronto(p, "✓ Já estava salvo");
             processarFila();
             return;
         }
@@ -521,9 +645,8 @@ public class MainActivity extends Activity {
                             final String q = qualidade;
                             h.post(new Runnable() {
                                 public void run() {
-                                    pronto(p, (marca ? "Baixado, mas só achei a versão com marca d'água"
-                                            : "Baixado ✓" + (q.isEmpty() ? "" : " (" + q + ")"))
-                                            + " · toque para ver");
+                                    pronto(p, marca ? "✓ Salvo, mas só achei com marca d'água"
+                                            : "✓ Salvo" + (q.isEmpty() ? "" : " · " + q));
                                     Toast.makeText(MainActivity.this, "Vídeo salvo na galeria",
                                             Toast.LENGTH_SHORT).show();
                                 }
@@ -612,6 +735,45 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Miniatura do vídeo no cartão. Se não vier, fica o ▶. */
+    void carregarCapa(final Pedido p, final String endereco, final String agente, final String pagina) {
+        if (endereco == null || !endereco.startsWith("http")) return;
+        final String cookie = CookieManager.getInstance().getCookie(endereco);
+        new Thread(new Runnable() {
+            public void run() {
+                HttpURLConnection c = null;
+                try {
+                    c = (HttpURLConnection) new URL(endereco).openConnection();
+                    c.setConnectTimeout(15_000);
+                    c.setReadTimeout(15_000);
+                    c.setRequestProperty("User-Agent", agente);
+                    c.setRequestProperty("Referer", pagina.isEmpty() ? "https://www.tiktok.com/" : pagina);
+                    if (cookie != null && !cookie.isEmpty()) c.setRequestProperty("Cookie", cookie);
+                    if (c.getResponseCode() / 100 != 2) return;
+                    Bitmap b;
+                    try (InputStream in = c.getInputStream()) {
+                        b = BitmapFactory.decodeStream(in);
+                    }
+                    if (b == null) return;
+                    if (b.getWidth() > 360) {
+                        b = Bitmap.createScaledBitmap(b, 360, Math.max(1, b.getHeight() * 360 / b.getWidth()), true);
+                    }
+                    final Bitmap img = b;
+                    h.post(new Runnable() {
+                        public void run() {
+                            p.capa.setImageBitmap(img);
+                            p.capaIcone.setVisibility(View.GONE);
+                        }
+                    });
+                } catch (Exception ignorado) {
+                    // sem miniatura, sem problema
+                } finally {
+                    if (c != null) c.disconnect();
+                }
+            }
+        }).start();
+    }
+
     Uri acharJaBaixado(String id) {
         String[] col = {MediaStore.Video.Media._ID};
         try (Cursor cur = getContentResolver().query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, col,
@@ -672,6 +834,8 @@ public class MainActivity extends Activity {
     void situacao(Pedido p, String msg, int cor) {
         p.situacao.setText(msg);
         p.situacao.setTextColor(cor);
+        // "Etiqueta" com a mesma cor, bem clarinha, atrás do texto.
+        p.situacao.setBackground(forma(GradientDrawable.RECTANGLE, (cor & 0x00FFFFFF) | 0x1F000000, 20));
     }
 
     void abrirVideo(Pedido p) {
@@ -713,14 +877,13 @@ public class MainActivity extends Activity {
         b.setText(s);
         b.setAllCaps(false);
         b.setTextColor(Color.WHITE);
-        GradientDrawable fundo = new GradientDrawable();
-        fundo.setColor(DESTAQUE);
-        fundo.setCornerRadius(dp(10));
-        b.setBackground(fundo);
-        b.setPadding(dp(16), 0, dp(16), 0);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, dp(44));
-        lp.leftMargin = dp(8);
+        b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        b.setTypeface(Typeface.DEFAULT_BOLD);
+        b.setStateListAnimator(null);
+        b.setBackground(new RippleDrawable(ColorStateList.valueOf(0x40FFFFFF),
+                forma(GradientDrawable.RECTANGLE, DESTAQUE, 26), null));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(MATCH, dp(52));
+        lp.topMargin = dp(12);
         b.setLayoutParams(lp);
         return b;
     }
