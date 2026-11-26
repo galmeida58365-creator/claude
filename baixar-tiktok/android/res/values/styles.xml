@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="fundo">#FFF6F7</color>
+    <color name="fundo">#FFFFFF</color>
     <color name="icone_fundo">#FE2C55</color>
     <style name="App" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/fundo</item>
@@ -8,6 +8,6 @@
         <item name="android:navigationBarColor">@color/fundo</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:colorAccent">#E5304A</item>
+        <item name="android:colorAccent">#FF0033</item>
     </style>
 </resources>

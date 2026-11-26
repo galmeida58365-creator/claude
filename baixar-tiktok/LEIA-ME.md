@@ -16,7 +16,7 @@ Baixa vídeos do TikTok **na melhor qualidade disponível e sem marca d'água**.
 - **Copiando o link:** no TikTok, toque em **Compartilhar → Copiar link** e abra o Baixar TikTok. Ele percebe o link copiado e baixa.
 - **Colando:** cole o link no campo ou toque em **Colar e baixar**.
 
-Os vídeos ficam na **galeria**, na pasta **Movies/TikTok**. Toque num vídeo da lista para assistir.
+Os vídeos ficam na **galeria**, na pasta **Movies/TikTok**, e aparecem na lista **Downloads** do app (também depois de fechar e abrir). Toque num vídeo para assistir. No **⋮** (ou segurando o dedo no vídeo) dá para **compartilhar**, **apagar do celular** ou **copiar o link**. Se um download der erro, o ⋮ tem **Tentar de novo**.
 
 Para achar o vídeo, o app abre a página dele por dentro, como um navegador. Se o TikTok mostrar uma verificação ou um botão, a página aparece no app: é só resolver que o download continua.
 
